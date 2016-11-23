@@ -607,7 +607,7 @@ public class WorkspacePermissionsFilterTest {
                                          .put(SECURE_PATH + "/workspace/{id}/environment/ubuntu");
 
         assertEquals(response.getStatusCode(), 204);
-        verify(workspaceService).updateEnvironment(eq("workspace123"), eq("ubuntu"), any());
+        verify(workspaceService).updateEnvironment(eq("workspace123"), eq("ubuntu"), any(), any());
         verify(subject).hasPermission(eq("workspace"), eq("workspace123"), eq("configure"));
     }
 

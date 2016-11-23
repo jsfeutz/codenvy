@@ -28,6 +28,7 @@ import org.eclipse.che.api.core.model.workspace.Environment;
 import org.eclipse.che.api.core.model.workspace.Workspace;
 import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
 import org.eclipse.che.api.core.notification.EventService;
+import org.eclipse.che.api.environment.server.CheEnvironmentValidator;
 import org.eclipse.che.api.environment.server.EnvironmentParser;
 import org.eclipse.che.api.environment.server.model.CheServicesEnvironmentImpl;
 import org.eclipse.che.api.machine.server.spi.SnapshotDao;
@@ -86,12 +87,13 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                                           WorkspaceRuntimes runtimes,
                                           EventService eventService,
                                           SnapshotDao snapshotDao,
+                                          CheEnvironmentValidator envValidator,
                                           AccountManager accountManager,
                                           EnvironmentParser environmentParser,
                                           @Named("che.workspace.auto_snapshot") boolean defaultAutoSnapshot,
                                           @Named("che.workspace.auto_restore") boolean defaultAutoRestore,
                                           @Named("che.workspace.default_memory_mb") int defaultMachineMemorySizeMB) {
-        super(workspaceDao, runtimes, eventService, accountManager, defaultAutoSnapshot, defaultAutoRestore, snapshotDao);
+        super(workspaceDao, runtimes, eventService, accountManager, defaultAutoSnapshot, defaultAutoRestore, snapshotDao, envValidator);
         this.startedWorkspacesLimit = startedWorkspacesLimit;
         this.systemRamInfoProvider = systemRamInfoProvider;
         this.workspacesPerUser = workspacesPerUser;

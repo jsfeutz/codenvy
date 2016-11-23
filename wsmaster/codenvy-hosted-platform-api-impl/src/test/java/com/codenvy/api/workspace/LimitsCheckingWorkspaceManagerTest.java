@@ -363,6 +363,7 @@ public class LimitsCheckingWorkspaceManagerTest {
                                                           null,
                                                           null,
                                                           null,
+                                                          null,
                                                           environmentParser,
                                                           defaultAutoSnapshot,
                                                           defaultAutoRestore,

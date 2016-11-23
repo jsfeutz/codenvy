@@ -24,6 +24,7 @@ import com.google.inject.spi.ConstructorBinding;
 
 import org.eclipse.che.account.spi.AccountDao;
 import org.eclipse.che.api.core.notification.EventService;
+import org.eclipse.che.api.environment.server.CheEnvironmentValidator;
 import org.eclipse.che.api.environment.server.MachineProcessManager;
 import org.eclipse.che.api.machine.server.spi.SnapshotDao;
 import org.eclipse.che.api.user.server.UserManager;
@@ -86,6 +87,7 @@ public class MachineTokenInterceptorTest {
                 bind(WorkspaceManager.class);
                 bind(SnapshotDao.class).toInstance(mock(SnapshotDao.class));
                 bind(WorkspaceFilesCleaner.class).toInstance(workspaceFilesCleaner);
+                bind(CheEnvironmentValidator.class).toInstance(mock(CheEnvironmentValidator.class));
 
                 bind(MachineTokenRegistry.class).toInstance(tokenRegistry);
 
