@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2012-2016 Codenvy, S.A.
+# Copyright (c) 2016 Codenvy, S.A.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License v1.0
 # which accompanies this distribution, and is available at
@@ -8,10 +8,6 @@
 # Contributors:
 #   Tyler Jewell - Initial Implementation
 #
-
-init_host_ip() {
-  GLOBAL_HOST_IP=${GLOBAL_HOST_IP:=$(docker_run --net host eclipse/che-ip:nightly)}
-}
 
 init_constants() {
   BLUE='\033[1;34m'
@@ -53,33 +49,40 @@ Usage: docker run -it --rm
     help                                 This message
     version                              Installed version and upgrade paths
     init                                 Initializes a directory with a ${CHE_MINI_PRODUCT_NAME} install
-         [--no-force|                      Default - uses cached local Docker images
-          --pull|                          Checks for newer images from DockerHub  
-          --force|                         Removes all images and re-pulls all images from DockerHub
-          --offline|                       Uses images saved to disk from the offline command
-          --accept-license]                Auto accepts the Codenvy license during installation
-    start [--pull|--force|--offline]     Starts ${CHE_MINI_PRODUCT_NAME} services
+         [--no-force                         Default - uses cached local Docker images
+          --pull                             Checks for newer images from DockerHub  
+          --force                            Removes all images and re-pulls all images from DockerHub
+          --offline                          Uses images saved to disk from the offline command
+          --accept-license                   Auto accepts the Codenvy license during installation
+          --reinit]                          Reinstalls using existing $CHE_MINI_PRODUCT_NAME.env configuration
+    start [--pull | --force | --offline] Starts ${CHE_MINI_PRODUCT_NAME} services
     stop                                 Stops ${CHE_MINI_PRODUCT_NAME} services
-    restart [--pull|--force]             Restart ${CHE_MINI_PRODUCT_NAME} services
+    restart [--pull | --force]           Restart ${CHE_MINI_PRODUCT_NAME} services
     destroy                              Stops services, and deletes ${CHE_MINI_PRODUCT_NAME} instance data
-            [--quiet|                      Does not ask for confirmation before destroying instance data
-             --cli]                        If :/cli is mounted, will destroy the cli.log
+            [--quiet                         Does not ask for confirmation before destroying instance data
+             --cli]                          If :/cli is mounted, will destroy the cli.log
     rmi [--quiet]                        Removes the Docker images for <version>, forcing a repull
     config                               Generates a ${CHE_MINI_PRODUCT_NAME} config from vars; run on any start / restart
     add-node                             Adds a physical node to serve workspaces intto the ${CHE_MINI_PRODUCT_NAME} cluster
     remove-node <ip>                     Removes the physical node from the ${CHE_MINI_PRODUCT_NAME} cluster
     upgrade                              Upgrades Codenvy from one version to another with migrations and backups
     download [--pull|--force|--offline]  Pulls Docker images for the current Codenvy version
-    backup [--quiet|--skip-data] Backups ${CHE_MINI_PRODUCT_NAME} configuration and data to /codenvy/backup volume mount
+    backup [--quiet | --skip-data]           Backups ${CHE_MINI_PRODUCT_NAME} configuration and data to /codenvy/backup volume mount
     restore [--quiet]                    Restores ${CHE_MINI_PRODUCT_NAME} configuration and data from /codenvy/backup mount
     offline                              Saves ${CHE_MINI_PRODUCT_NAME} Docker images into TAR files for offline install
-    info [ --all                         Run all debugging tests
-           --debug                       Displays system information
-           --network ]                   Test connectivity between ${CHE_MINI_PRODUCT_NAME} sub-systems
+    info                                 Displays info about ${CHE_MINI_PRODUCT_NAME} and the CLI 
+         [ --all                             Run all debugging tests
+           --debug                           Displays system information
+           --network]                        Test connectivity between ${CHE_MINI_PRODUCT_NAME} sub-systems
+    ssh <wksp-name> [machine-name]       SSH to a workspace if SSH agent enabled
+    mount <wksp-name>                    Synchronize workspace with current working directory
+    action <action-name> [--help]        Start action on ${CHE_MINI_PRODUCT_NAME} instance
+    compile <mvn-command>                SDK - Builds Che source code or modules
+    test <test-name> [--help]            Start test on ${CHE_MINI_PRODUCT_NAME} instance
 
 Variables:
     CODENVY_HOST                         IP address or hostname where ${CHE_MINI_PRODUCT_NAME} will serve its users
-    CLI_DEBUG                            Default=false.Prints stack trace during execution
+    CLI_DEBUG                            Default=false. Prints stack trace during execution
     CLI_INFO                             Default=true. Prints out INFO messages to standard out
     CLI_WARN                             Default=true. Prints WARN messages to standard out
     CLI_LOG                              Default=true. Prints messages to cli.log file
@@ -260,15 +263,19 @@ check_docker() {
   fi
 
   # Detect version so that we can provide better error warnings
-  DEFAULT_CODENVY_VERSION="latest"
+  DEFAULT_CODENVY_VERSION=$(cat "/version/latest.ver")
   CODENVY_IMAGE_NAME=$(docker inspect --format='{{.Config.Image}}' $(get_this_container_id))
   CODENVY_IMAGE_VERSION=$(echo "${CODENVY_IMAGE_NAME}" | cut -d : -f2 -s)
 
-  if [ "${CODENVY_IMAGE_VERSION}" = "" ]; then
-    CODENVY_VERSION=$DEFAULT_CODENVY_VERSION
+  if [[ "${CODENVY_IMAGE_VERSION}" = "" ]] ||
+     [[ "${CODENVY_IMAGE_VERSION}" = "latest" ]]; then
+     warning "You are using CLI image version 'latest' which is set to '$DEFAULT_CODENVY_VERSION'."
+    CODENVY_IMAGE_VERSION=$DEFAULT_CODENVY_VERSION
   else
-    CODENVY_VERSION=$CODENVY_IMAGE_VERSION
-  fi  
+    CODENVY_IMAGE_VERSION=$CODENVY_IMAGE_VERSION
+  fi
+
+  CODENVY_VERSION=$CODENVY_IMAGE_VERSION
 }
   
 check_mounts() {
@@ -282,6 +289,8 @@ check_mounts() {
   BACKUP_MOUNT=$(get_container_backup_folder)
   REPO_MOUNT=$(get_container_repo_folder)
   CLI_MOUNT=$(get_container_cli_folder)
+  SYNC_MOUNT=$(get_container_sync_folder)
+  UNISON_PROFILE_MOUNT=$(get_container_unison_folder)
    
   TRIAD=""
   if [[ "${CONFIG_MOUNT}" != "not set" ]] && \
@@ -364,14 +373,14 @@ check_mounts() {
       info "Welcome to Codenvy!"
       info ""
       info "You volume mounted a valid Codenvy repo to :/repo, but we could not find a Tomcat assembly."
-      info "Have you built /assembly/onpremises-ide-packaging-tomcat-codenvy-allinone?"
+      info "Have you built /assembly/onpremises-ide-packaging-tomcat-codenvy-allinone with 'mvn clean install'?"
       return 2
     fi
   fi
 }
 
 check_host_volume_mount() {
-  echo 'test' > /codenvy/test >> "${LOGS}" 2>&1
+  echo 'test' > /codenvy/test
   
   if [[ ! -f /codenvy/test ]]; then
     error "Docker installed, but unable to write files to your host."
@@ -381,6 +390,54 @@ check_host_volume_mount() {
   fi
 
   rm -rf /codenvy/test 
+}
+
+get_mount_path() {
+  debug $FUNCNAME
+  FULL_PATH=$(get_full_path "${1}")
+  POSIX_PATH=$(convert_windows_to_posix "${FULL_PATH}")
+  CLEAN_PATH=$(get_clean_path "${POSIX_PATH}")
+  echo $CLEAN_PATH
+}
+
+get_full_path() {
+  debug $FUNCNAME
+  # create full directory path
+  echo "$(cd "$(dirname "${1}")"; pwd)/$(basename "$1")"
+}
+
+convert_windows_to_posix() {
+  debug $FUNCNAME
+  echo "/"$(echo "$1" | sed 's/\\/\//g' | sed 's/://')
+}
+
+convert_posix_to_windows() {
+  debug $FUNCNAME
+  # Remove leading slash
+  VALUE="${1:1}"
+
+  # Get first character (drive letter)
+  VALUE2="${VALUE:0:1}"
+
+  # Replace / with \
+  VALUE3=$(echo ${VALUE} | tr '/' '\\' | sed 's/\\/\\\\/g')
+
+  # Replace c\ with c:\ for drive letter
+  echo "$VALUE3" | sed "s/./$VALUE2:/1"
+}
+
+get_clean_path() {
+  debug $FUNCNAME
+  INPUT_PATH=$1
+  # \some\path => /some/path
+  OUTPUT_PATH=$(echo ${INPUT_PATH} | tr '\\' '/')
+  # /somepath/ => /somepath
+  OUTPUT_PATH=${OUTPUT_PATH%/}
+  # /some//path => /some/path
+  OUTPUT_PATH=$(echo ${OUTPUT_PATH} | tr -s '/')
+  # "/some/path" => /some/path
+  OUTPUT_PATH=${OUTPUT_PATH//\"}
+  echo ${OUTPUT_PATH}
 }
 
 init_logging() {
@@ -430,6 +487,18 @@ get_container_repo_folder() {
 get_container_cli_folder() {
   THIS_CONTAINER_ID=$(get_this_container_id)
   FOLDER=$(get_container_host_bind_folder ":/cli" $THIS_CONTAINER_ID)
+  echo "${FOLDER:=not set}"
+}
+
+get_container_sync_folder() {
+  THIS_CONTAINER_ID=$(get_this_container_id)
+  FOLDER=$(get_container_host_bind_folder ":/sync" $THIS_CONTAINER_ID)
+  echo "${FOLDER:=not set}"
+}
+
+get_container_unison_folder() {
+  THIS_CONTAINER_ID=$(get_this_container_id)
+  FOLDER=$(get_container_host_bind_folder ":/unison" $THIS_CONTAINER_ID)
   echo "${FOLDER:=not set}"
 }
 
@@ -523,13 +592,17 @@ init() {
   # Only initialize after mounts have been established so we can write cli.log out to a mount folder
   init_logging "$@"
 
+  SCRIPTS_CONTAINER_SOURCE_DIR=""
   if [[ "${CODENVY_DEVELOPMENT_MODE}" = "on" ]]; then
-     # Use the CLI that is inside the repository.  
-     source /repo/dockerfiles/cli/cli.sh
+     # Use the CLI that is inside the repository.
+     SCRIPTS_CONTAINER_SOURCE_DIR="/repo/dockerfiles/cli"  
   else
      # Use the CLI that is inside the container.  
-    source /scripts/cli.sh
+     SCRIPTS_CONTAINER_SOURCE_DIR="/scripts"  
   fi
+
+  # Primary source directory
+  source "${SCRIPTS_CONTAINER_SOURCE_DIR}"/cli.sh
 }
 
 # See: https://sipb.mit.edu/doc/safe-shell/
@@ -543,4 +616,3 @@ init "$@"
 info "cli" "Loading cli..."
 cli_init "$@"
 cli_parse "$@"
-cli_cli "$@"
