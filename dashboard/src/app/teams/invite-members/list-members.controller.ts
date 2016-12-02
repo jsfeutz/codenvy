@@ -176,9 +176,11 @@ export class ListMembersController {
    * @param user
    * @param roles
    */
-  addMember(user: any, roles: Array<any>): void {
-    user.roles = roles;
-    this.members.push(user);
+  addMembers(users: Array<any>, roles: Array<any>): void {
+    users.forEach((user: any) => {
+      user.roles = roles;
+      this.members.push(user);
+    });
     this.buildMembersList();
   }
 

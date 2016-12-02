@@ -15,7 +15,7 @@
                    che-search-model="listTeamWorkspacesController.workspaceFilter.config.name"
                    che-hide-search="listTeamWorkspacesController.workspaces.length === 0"
                    che-add-button-title="Add Workspace"
-                   che-add-button-href="#/create-workspace"
+                   che-add-button-href="#/create-workspace?namespace={{listTeamWorkspacesController.team.name}}"
                    che-delete-button-title="Delete"
                    che-on-delete="listTeamWorkspacesController.deleteSelectedWorkspaces()"
                    che-hide-delete="listTeamWorkspacesController.isNoSelected"

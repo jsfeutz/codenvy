@@ -37,6 +37,10 @@ export class MemberDialogController {
    */
   private $mdDialog: angular.material.IDialogService;
   /**
+   * Promises service.
+   */
+  private $q: ng.IQService;
+  /**
    * Processing state of adding member.
    */
   private isProcessing: boolean;
@@ -70,17 +74,23 @@ export class MemberDialogController {
    */
   private title: string;
   /**
-   *
+   * Title of operation button (Save or Add)
    */
   private buttonTitle: string;
+  /**
+   * Email validation error message.
+   */
+  private emailError: string;
+
   /**
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor($mdDialog: angular.material.IDialogService, codenvyTeam: CodenvyTeam, codenvyUser: CodenvyUser) {
+  constructor($mdDialog: angular.material.IDialogService, codenvyTeam: CodenvyTeam, codenvyUser: CodenvyUser, $q: ng.IQService) {
     this.$mdDialog = $mdDialog;
     this.codenvyTeam = codenvyTeam;
     this.codenvyUser = codenvyUser;
+    this.$q = $q;
 
     this.isProcessing = false;
     this.roles = [];
@@ -116,37 +126,74 @@ export class MemberDialogController {
   }
 
   /**
-   * Checks whether enter email is unique.
+   * Checks whether entered email valid and is unique.
    *
-   * @param email email to check
-   * @returns {boolean} true if pointed email dis not in list yet
+   * @param value value with email(s) to check
+   * @returns {boolean} true if pointed email(s) are valid and not in the list yet
    */
-  isUnique(email: string): boolean {
-    return this.emails.indexOf(email) < 0;
+  isValidEmail(value: string): boolean {
+    // return this.emails.indexOf(email) < 0;
+    let emails = value.replace(/ /g, ',').split(',');
+    for (let i = 0; i < emails.length; i++) {
+      let email = emails[i];
+      if (email.length > 0 && !/\S+@\S+\.\S+/.test(email)) {
+        this.emailError = email + ' is invalid email address.';
+        return false;
+      }
+
+      if (this.emails.indexOf(email) >= 0) {
+        this.emailError = 'User with email ' + email + ' is already invited.';
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
    * Adds new member.
    */
-  addMember(): void {
+  addMembers(): void {
     let userRoles = this.getRoles();
 
-    let user = this.codenvyUser.getUserByAlias(this.email);
-    if (user) {
-      this.finishAdding(user, userRoles);
-      return;
-    }
+    let emails = this.email.replace(/ /g, ',').split(',');
+    // form the list of emails without duplicates and empty values:
+    let resultEmails = emails.reduce((array: Array<string>, element: string) => {
+      if (array.indexOf(element) < 0 && element.length > 0) {
+        array.push(element);
+      }
+      return array;
+    }, []);
 
-    user = {};
-    user.email = this.email;
-    this.isProcessing = true;
-
-    this.codenvyUser.fetchUserByAlias(this.email).then(() => {
-      user = this.codenvyUser.getUserByAlias(this.email);
-      this.finishAdding(user, userRoles);
-    }, (error: any) => {
-      this.finishAdding(user, userRoles);
+    let promises = [];
+    let users = [];
+    resultEmails.forEach((email: string) => {
+      promises.push(this.processUser(email, users));
     });
+
+    this.$q.all(promises).then(() => {
+      this.finishAdding(users, userRoles);
+    });
+  }
+
+  processUser(email: string, users : Array<any>): ng.IPromise<any> {
+    let deferred = this.$q.defer();
+    let user = this.codenvyUser.getUserByAlias(email);
+    if (user) {
+      users.push(user);
+      deferred.resolve();
+    } else {
+      user = {};
+      user.email = email;
+      this.isProcessing = true;
+      this.codenvyUser.fetchUserByAlias(email).then(() => {
+        users.push(this.codenvyUser.getUserByAlias(email));
+        deferred.resolve();
+      }, (error: any) => {
+        users.push(user);
+        deferred.resolve();
+      });
+    }
+    return deferred.promise;
   }
 
   /**
@@ -177,12 +224,12 @@ export class MemberDialogController {
   /**
    * Finish adding user state.
    *
-   * @param user user to be added
+   * @param users users to be added
    * @param roles user's roles
    */
-  finishAdding(user: any, roles: any): void {
+  finishAdding(users: Array<any>, roles: any): void {
     this.isProcessing = false;
-    this.callbackController.addMember(user, roles);
+    this.callbackController.addMembers(users, roles);
     this.hide();
   }
 

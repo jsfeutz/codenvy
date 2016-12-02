@@ -8,15 +8,13 @@
                          ng-model="memberDialogController.email"
                          ng-model-options="{allowInvalid: true}"
                          ng-disabled="memberDialogController.isProcessing"
-
-                         custom-validator="memberDialogController.isUnique($value)"
-                         type="email"
+                         custom-validator="memberDialogController.isValidEmail($value)"
+                         type="text"
                          aria-label="New member"
-                         ng-keypress="memberForm.$valid && $event.which === 13 && memberDialogController.addMember()"
+                         ng-keypress="memberForm.$valid && $event.which === 13 && memberDialogController.addMembers()"
                          required focusable>
             <div ng-message="required">A user email is required.</div>
-            <div ng-message="customValidator">User with email {{memberDialogController.email}} is already invited.</div>
-            <div ng-message="email">Invalid email address.</div>
+            <div ng-message="customValidator">{{memberDialogController.emailError}}</div>
           </che-input-box>
       </che-label-container>
       <che-label-container che-label-name="Permissions" che-label-description="Allowed actions of team member">
@@ -40,7 +38,7 @@
       <che-button-primary che-button-title="{{memberDialogController.buttonTitle}}"
                           ng-if="!memberDialogController.member"
                           ng-disabled="memberForm.$invalid || memberDialogController.isProcessing"
-                          ng-click="memberDialogController.addMember()"></che-button-primary>
+                          ng-click="memberDialogController.addMembers()"></che-button-primary>
       <che-button-primary che-button-title="{{memberDialogController.buttonTitle}}"
                           ng-disabled="memberDialogController.isProcessing"
                           ng-if="memberDialogController.member"

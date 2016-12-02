@@ -111,7 +111,7 @@ export class CreateTeamController {
    * @param name team's to be based on
    * @returns {string} generated name
    */
-  generateTeamName(name: string) {
+  generateTeamName(name: string): string {
     let teams = this.codenvyTeam.getTeams();
 
     if (teams && teams.length === 0) {
@@ -134,7 +134,7 @@ export class CreateTeamController {
   /**
    * Performs new team creation.
    */
-  createTeam() {
+  createTeam(): void {
     this.isLoading = true;
     this.codenvyTeam.createTeam(this.teamName).then((data: any) => {
       this.addPermissions(data, this.members);

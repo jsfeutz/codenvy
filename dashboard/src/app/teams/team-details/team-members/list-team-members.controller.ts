@@ -250,26 +250,44 @@ export class ListTeamMembersController {
   }
 
   /**
-   * Add new member to the team.
+   * Add new members to the team.
    *
-   * @param member member to be added
+   * @param members members to be added
    * @param roles member roles
    */
-  addMember(member: any, roles: Array<any>): void {
-    if (member.id) {
-      let actions = this.codenvyTeam.getActionsFromRoles(roles);
-      let permissions = {
-        instanceId: this.team.id,
-        userId: member.id,
-        domainId: 'organization',
-        actions: actions
-      };
+  addMembers(members: Array<any>, roles: Array<any>): void {
+    let promises = [];
+    let unregistered = [];
 
-      this.storePermissions(permissions);
-    } else {
-      this.cheNotification.showError('User ' + member.email + ' is not registered in the system.');
-    }
+    members.forEach((member: any) => {
+      if (member.id) {
+        let actions = this.codenvyTeam.getActionsFromRoles(roles);
+        let permissions = {
+          instanceId: this.team.id,
+          userId: member.id,
+          domainId: 'organization',
+          actions: actions
+        };
+        let promise = this.codenvyPermissions.storePermissions(permissions);
+        promises.push(promise);
+      } else {
+        unregistered.push(member.email);
+      }
+    });
+
+
+    this.isLoading = true;
+    this.$q.all(promises).then(() => {
+      this.fetchMembers();
+    }).finally(() => {
+      this.isLoading = false;
+      if (unregistered.length > 0) {
+        this.cheNotification.showError('User' + (unregistered.length > 1 ? 's ' : ' ') + unregistered.join(', ') + (unregistered.length > 1 ? ' are' : ' is') + ' not registered in the system.');
+      }
+    });
   }
+
+
 
   /**
    * Perform edit member permissions.
