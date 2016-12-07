@@ -32,18 +32,14 @@
         <div flex hide-xs layout-gt-xs="row"
              layout-align="start center"
              class="che-list-item-details">
-          <che-list-header-column flex="20"
+          <che-list-header-column flex="30"
                                   che-sort-value="listMembersController.membersOrderBy"
                                   che-sort-item="name"
                                   che-column-title='Invited Developers'></che-list-header-column>
-          <che-list-header-column flex="20"
-                                  che-column-title='Manage Team'></che-list-header-column>
-          <che-list-header-column flex="20"
-                                  che-column-title='Manage Resources'></che-list-header-column>
-          <che-list-header-column flex="20"
-                                  che-column-title='Manage Workspaces'></che-list-header-column>
-          <che-list-header-column flex="20"
-                                  che-column-title='Create Workspaces'></che-list-header-column>
+          <che-list-header-column flex="35"
+                                  che-column-title='Team Member'></che-list-header-column>
+          <che-list-header-column flex="35"
+                                  che-column-title='Team Admin'></che-list-header-column>
         </div>
       </div>
     </che-list-header>
@@ -66,33 +62,21 @@
                layout-align-gt-xs="start center"
                layout-align-xs="start start"
                class="che-list-item-details">
-            <div flex="20"
+            <div flex="30"
                  class="che-list-item-name">
               <span class="material-design icon-ic_done_24px user-exists-checked" ng-if="member.id"></span>
               <span class="che-hover">{{member.email}}</span>
             </div>
-            <div flex="20">
-              <md-switch ng-model="listMembersController.memberRoles[member.email].isManageTeam"
+            <div flex="35">
+              <md-switch ng-model="listMembersController.memberRoles[member.email].isTeamMember"
                          ng-change="listMembersController.onRolesChanged(member)"
                          aria-label="{{member}} manage team" class="permission-switcher">
               </md-switch>
             </div>
-            <div flex="20">
-              <md-switch ng-model="listMembersController.memberRoles[member.email].isManageResources"
+            <div flex="35">
+              <md-switch ng-model="listMembersController.memberRoles[member.email].isTeamAdmin"
                          ng-change="listMembersController.onRolesChanged(member)"
                          aria-label="{{member}} manage resources" class="permission-switcher">
-              </md-switch>
-            </div>
-            <div flex="20">
-              <md-switch ng-model="listMembersController.memberRoles[member.email].isManageWorkspaces"
-                         ng-change="listMembersController.onRolesChanged(member)"
-                         aria-label="{{member}} manage workspaces" class="permission-switcher">
-              </md-switch>
-            </div>
-            <div flex="20">
-              <md-switch ng-model="listMembersController.memberRoles[member.email].isCreateWorkspaces"
-                         ng-change="listMembersController.onRolesChanged(member)"
-                         aria-label="{{member}} create workspaces" class="permission-switcher">
               </md-switch>
             </div>
           </div>

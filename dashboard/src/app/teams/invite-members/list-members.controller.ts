@@ -89,10 +89,8 @@ export class ListMembersController {
     this.memberRoles = {};
     this.members.forEach((member: any) => {
       let roles = {
-        isManageTeam: member.roles.indexOf(CodenvyTeamRoles.MANAGE_TEAM) >= 0,
-        isManageResources: member.roles.indexOf(CodenvyTeamRoles.MANAGE_RESOURCES) >= 0,
-        isManageWorkspaces: member.roles.indexOf(CodenvyTeamRoles.MANAGE_WORKSPACES) >= 0,
-        isCreateWorkspaces: member.roles.indexOf(CodenvyTeamRoles.CREATE_WORKSPACES) >= 0
+        isTeamMember: member.roles.indexOf(CodenvyTeamRoles.TEAM_MEMBER) >= 0,
+        isTeamAdmin: member.roles.indexOf(CodenvyTeamRoles.TEAM_ADMIN) >= 0
       };
       this.memberRoles[member.email] = roles;
     });
@@ -106,21 +104,14 @@ export class ListMembersController {
   onRolesChanged(member: any): void {
     let roles = [];
     let rolesInfo = this.memberRoles[member.email];
-    if (rolesInfo.isManageTeam) {
-      roles.push(CodenvyTeamRoles.MANAGE_TEAM);
+    if (rolesInfo.isTeamMember) {
+      roles.push(CodenvyTeamRoles.TEAM_MEMBER);
     }
 
-    if (rolesInfo.isManageResources) {
-      roles.push(CodenvyTeamRoles.MANAGE_RESOURCES);
+    if (rolesInfo.isTeamAdmin) {
+      roles.push(CodenvyTeamRoles.TEAM_ADMIN);
     }
 
-    if (rolesInfo.isManageWorkspaces) {
-      roles.push(CodenvyTeamRoles.MANAGE_WORKSPACES);
-    }
-
-    if (rolesInfo.isCreateWorkspaces) {
-      roles.push(CodenvyTeamRoles.CREATE_WORKSPACES);
-    }
     member.roles = roles;
   }
 

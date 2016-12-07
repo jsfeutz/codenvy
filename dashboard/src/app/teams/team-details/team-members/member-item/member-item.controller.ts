@@ -13,12 +13,18 @@
  * from Codenvy S.A..
  */
 'use strict';
+import {CodenvyTeam} from '../../../../../components/api/codenvy-team.factory';
+
 /**
  * Controller for team member item..
  *
  * @author Ann Shumilova
  */
 export class MemberItemController {
+  /**
+   * Team API interaction.
+   */
+  private codenvyTeam: CodenvyTeam;
   /**
    * Service for displaying dialogs.
    */
@@ -36,8 +42,9 @@ export class MemberItemController {
    * Default constructor that is using resource injection
    * @ngInject for Dependency injection
    */
-  constructor($mdDialog: angular.material.IDialogService) {
+  constructor($mdDialog: angular.material.IDialogService, codenvyTeam: CodenvyTeam) {
     this.$mdDialog = $mdDialog;
+    this.codenvyTeam = codenvyTeam;
   }
 
   /**
@@ -66,12 +73,17 @@ export class MemberItemController {
   }
 
   /**
-   * Returns string with member actions.
+   * Returns string with member roles.
    *
-   * @returns {string} string format of actions array
+   * @returns {string} string format of roles array
    */
-  getMemberActions(): void {
-    return this.member.permissions.actions.join(', ');
+  getMemberRoles(): string {
+    let roles = this.codenvyTeam.getRolesFromActions(this.member.permissions.actions);
+    let titles = [];
+    roles.forEach((role: any) => {
+      titles.push(role.title);
+    });
+    return titles.join(', ');
   }
 }
 

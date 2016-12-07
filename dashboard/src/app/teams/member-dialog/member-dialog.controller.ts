@@ -99,18 +99,14 @@ export class MemberDialogController {
       this.buttonTitle = 'Save';
       this.email = this.member.email;
       let roles = this.codenvyTeam.getRolesFromActions(this.member.permissions.actions);
-      this.roles.push({'role' : CodenvyTeamRoles.MANAGE_WORKSPACES, 'allowed' : roles.indexOf(CodenvyTeamRoles.MANAGE_WORKSPACES) >= 0});
-      this.roles.push({'role' : CodenvyTeamRoles.MANAGE_TEAM, 'allowed' : roles.indexOf(CodenvyTeamRoles.MANAGE_TEAM) >= 0});
-      this.roles.push({'role' : CodenvyTeamRoles.CREATE_WORKSPACES, 'allowed' : roles.indexOf(CodenvyTeamRoles.CREATE_WORKSPACES) >= 0});
-      this.roles.push({'role' : CodenvyTeamRoles.MANAGE_RESOURCES, 'allowed' : roles.indexOf(CodenvyTeamRoles.MANAGE_RESOURCES) >= 0});
+      this.roles.push({'role' : CodenvyTeamRoles.TEAM_MEMBER, 'allowed' : roles.indexOf(CodenvyTeamRoles.TEAM_MEMBER) >= 0});
+      this.roles.push({'role' : CodenvyTeamRoles.TEAM_ADMIN, 'allowed' : roles.indexOf(CodenvyTeamRoles.TEAM_ADMIN) >= 0});
     } else {
       this.email = '';
       this.title = 'Invite user to collaborate';
       this.buttonTitle = 'Add';
-      this.roles.push({'role' : CodenvyTeamRoles.MANAGE_WORKSPACES, 'allowed' : true});
-      this.roles.push({'role' : CodenvyTeamRoles.MANAGE_TEAM, 'allowed' : false});
-      this.roles.push({'role' : CodenvyTeamRoles.CREATE_WORKSPACES, 'allowed' : true});
-      this.roles.push({'role' : CodenvyTeamRoles.MANAGE_RESOURCES, 'allowed' : false});
+      this.roles.push({'role' : CodenvyTeamRoles.TEAM_MEMBER, 'allowed' : true});
+      this.roles.push({'role' : CodenvyTeamRoles.TEAM_ADMIN, 'allowed' : false});
     }
     this.emails = [];
     this.members.forEach((member: any) => {

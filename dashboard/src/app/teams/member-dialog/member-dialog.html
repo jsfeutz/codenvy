@@ -18,20 +18,13 @@
           </che-input-box>
       </che-label-container>
       <che-label-container che-label-name="Permissions" che-label-description="Allowed actions of team member">
-        <div layout="row">
-          <div layout="column" flex="50">
+        <div layout="column">
             <md-switch ng-repeat="roleInfo in memberDialogController.roles" ng-model="roleInfo.allowed"
-                       ng-if="$index % 2 === 1" ng-disabled="memberDialogController.isProcessing">
-              {{roleInfo.role.title}}
+                       ng-disabled="memberDialogController.isProcessing">
+              <span>{{roleInfo.role.title}}</span>
+              <span class="member-role-description">{{roleInfo.role.description}}</span>
             </md-switch>
           </div>
-          <div layout="column" flex="50">
-            <md-switch ng-repeat="roleInfo in memberDialogController.roles" ng-model="roleInfo.allowed"
-                       ng-if="$index % 2 === 0" ng-disabled="memberDialogController.isProcessing">
-              {{roleInfo.role.title}}
-            </md-switch>
-          </div>
-        </div>
       </che-label-container>
     </ng-form>
     <div layout="row" layout-align="end center">
