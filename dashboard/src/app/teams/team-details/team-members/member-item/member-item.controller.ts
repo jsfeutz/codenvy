@@ -37,14 +37,25 @@ export class MemberItemController {
    * Member to be displayed. (Comes from directive's scope).
    */
   private member: any;
+  /**
+   * Lodash library.
+   */
+  private lodash: any;
+  /**
+   * Actions that are not part of any role.
+   */
+  private otherActions: Array<string>;
 
   /**
    * Default constructor that is using resource injection
    * @ngInject for Dependency injection
    */
-  constructor($mdDialog: angular.material.IDialogService, codenvyTeam: CodenvyTeam) {
+  constructor($mdDialog: angular.material.IDialogService, codenvyTeam: CodenvyTeam, lodash: any) {
     this.$mdDialog = $mdDialog;
     this.codenvyTeam = codenvyTeam;
+    this.lodash = lodash;
+
+    this.otherActions = [];
   }
 
   /**
@@ -80,9 +91,13 @@ export class MemberItemController {
   getMemberRoles(): string {
     let roles = this.codenvyTeam.getRolesFromActions(this.member.permissions.actions);
     let titles = [];
+    let processedActions = []
     roles.forEach((role: any) => {
       titles.push(role.title);
+      processedActions = processedActions.concat(role.actions);
     });
+
+    this.otherActions = this.lodash.difference(this.member.permissions.actions, processedActions);
     return titles.join(', ');
   }
 }

@@ -46,7 +46,8 @@
       </div>
       <div flex-gt-xs="35" class="che-list-item-secondary">
         <span class="che-xs-header noselect" hide-gt-xs>Permissions</span>
-        <span class="member-list-permissions">{{memberItemController.getMemberRoles()}}</span>
+        <span class="member-list-permissions">{{memberItemController.getMemberRoles()}} </span>
+        <span tooltip="{{memberItemController.otherActions.toString()}}" ng-if="memberItemController.otherActions.length > 0">, Other...</span>
       </div>
      <!-- <div flex-gt-xs="10"
            class="che-list-item-secondary">

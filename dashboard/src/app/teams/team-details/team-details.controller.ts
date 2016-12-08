@@ -57,6 +57,10 @@ export class TeamDetailsController {
    * Index of the selected tab.
    */
   private selectedTabIndex: number;
+  /**
+   * Team limits.
+   */
+  private limits: any;
 
   /**
    * Default constructor that is using resource injection
@@ -100,7 +104,7 @@ export class TeamDetailsController {
   fetchTeamDetails(): void {
     this.team  = this.codenvyTeam.getTeamByName(this.teamName);
     this.newName = angular.copy(this.teamName);
-
+    this.fetchLimits();
     if (!this.team) {
       this.codenvyTeam.fetchTeamByName(this.teamName).then((team) => {
         this.team = team;
@@ -108,6 +112,13 @@ export class TeamDetailsController {
         this.invalidTeam = true;
       });
     }
+  }
+
+  fetchLimits(): void {
+    this.limits = {};
+    this.limits.workspaceCap = 3;
+    this.limits.runtimeCap = 2;
+    this.limits.ramCap = 2;
   }
 
   /**
@@ -152,5 +163,9 @@ export class TeamDetailsController {
         this.cheNotification.showError((error.data && error.data.message !== null) ? error.data.message : 'Rename team failed.');
       });
     }
+  }
+
+  updateLimits() {
+    // TODO
   }
 }

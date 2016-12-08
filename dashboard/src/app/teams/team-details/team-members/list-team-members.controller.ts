@@ -275,7 +275,6 @@ export class ListTeamMembersController {
       }
     });
 
-
     this.isLoading = true;
     this.$q.all(promises).then(() => {
       this.fetchMembers();
