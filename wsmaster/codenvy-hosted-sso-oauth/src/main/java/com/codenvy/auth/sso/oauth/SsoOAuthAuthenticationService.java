@@ -31,10 +31,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptyList;
+import static org.eclipse.che.security.OAuthUtils.getParameter;
+import static org.eclipse.che.security.OAuthUtils.getRequestParameters;
+import static org.eclipse.che.security.OAuthUtils.getRequestUrl;
 
 /**
  * RESTful wrapper for OAuthAuthenticator.
@@ -51,7 +55,7 @@ public class SsoOAuthAuthenticationService extends OAuthAuthenticationService {
     @Override
     public Response callback(@QueryParam("errorValues") List<String> errorValues) throws OAuthAuthenticationException, BadRequestException {
         URL requestUrl = getRequestUrl(uriInfo);
-        Map<String, List<String>> params = getRequestParameters(getState(requestUrl));
+        Map<String, List<String>> params = getRequestParameters(requestUrl);
         if (errorValues != null && errorValues.contains("access_denied")) {
             return Response.temporaryRedirect(
                     uriInfo.getRequestUriBuilder().replacePath(errorPage).replaceQuery(null).build()).build();
@@ -59,7 +63,7 @@ public class SsoOAuthAuthenticationService extends OAuthAuthenticationService {
         final String providerName = getParameter(params, "oauth_provider");
         OAuthAuthenticator oauth = getAuthenticator(providerName);
         final List<String> scopes = params.get("scope");
-        final String userId = oauth.callback(requestUrl, scopes == null ? Collections.<String>emptyList() : scopes);
+        final String userId = oauth.callback(requestUrl, scopes == null ? emptyList() : scopes);
         String redirectAfterLogin = getParameter(params, "redirect_after_login");
         try {
             redirectAfterLogin = URLDecoder.decode(redirectAfterLogin, "UTF-8");

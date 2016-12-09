@@ -176,6 +176,9 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         //oauth 2
         bind(OAuthAuthenticatorProvider.class).to(OAuthAuthenticatorProviderImpl.class);
         bind(org.eclipse.che.api.auth.oauth.OAuthTokenProvider.class).to(OAuthAuthenticatorTokenProvider.class);
+        bind(org.eclipse.che.security.oauth1.OAuthAuthenticationService.class);
+
+        bind(com.codenvy.service.bitbucket.BitbucketService.class);
 
         bind(FactoryAcceptValidator.class).to(org.eclipse.che.api.factory.server.impl.FactoryAcceptValidatorImpl.class);
         bind(FactoryCreateValidator.class).to(org.eclipse.che.api.factory.server.impl.FactoryCreateValidatorImpl.class);

@@ -16,13 +16,15 @@ package org.eclipse.che.ide.ext.bitbucket.server;
 
 import static java.net.URLDecoder.decode;
 import static java.net.URLEncoder.encode;
+import static javax.ws.rs.core.HttpHeaders.ACCEPT;
 import static org.eclipse.che.commons.json.JsonHelper.toJson;
 import static org.eclipse.che.commons.json.JsonNameConventions.CAMEL_UNDERSCORE;
 import static org.eclipse.che.ide.MimeType.APPLICATION_FORM_URLENCODED;
 import static org.eclipse.che.ide.MimeType.APPLICATION_JSON;
+import static org.eclipse.che.ide.ext.bitbucket.server.BitbucketServerDTOConverter.*;
+import static org.eclipse.che.ide.ext.bitbucket.server.BitbucketServerDTOConverter.convertToBitbucketUser;
 import static org.eclipse.che.ide.ext.bitbucket.shared.Preconditions.checkArgument;
 import static org.eclipse.che.ide.ext.bitbucket.shared.StringHelper.isNullOrEmpty;
-import static org.eclipse.che.ide.rest.HTTPHeader.ACCEPT;
 import static org.eclipse.che.ide.rest.HTTPHeader.AUTHORIZATION;
 import static org.eclipse.che.ide.rest.HTTPHeader.CONTENT_TYPE;
 import static org.eclipse.che.ide.rest.HTTPMethod.GET;
@@ -30,9 +32,11 @@ import static org.eclipse.che.ide.rest.HTTPMethod.POST;
 import static org.eclipse.che.ide.rest.HTTPStatus.CREATED;
 import static org.eclipse.che.ide.rest.HTTPStatus.OK;
 
+import org.eclipse.che.api.auth.oauth.OAuthAuthorizationHeaderProvider;
 import org.eclipse.che.api.auth.oauth.OAuthTokenProvider;
 import org.eclipse.che.api.auth.shared.dto.OAuthToken;
 import org.eclipse.che.api.core.ServerException;
+import org.eclipse.che.api.core.rest.HttpJsonRequestFactory;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.json.JsonHelper;
 import org.eclipse.che.commons.json.JsonParseException;
@@ -42,8 +46,14 @@ import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketPullRequestsPage;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepositoriesPage;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepository;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepositoryFork;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerPullRequest;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerPullRequestsPage;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerRepository;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerUser;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketUser;
 
+import javax.inject.Named;
+import javax.inject.Singleton;
 import javax.validation.constraints.NotNull;
 import javax.inject.Inject;
 import java.io.BufferedWriter;
@@ -53,26 +63,59 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Contains methods for retrieving data from BITBUCKET and processing it before sending to client side.
  *
  * @author Kevin Pollet
+ * @author Igor Vinokur
  */
+@Singleton
 public class Bitbucket {
-    private static final String BITBUCKET_API_URL     = "https://api.bitbucket.org";
-    private static final String BITBUCKET_2_0_API_URL = BITBUCKET_API_URL + "/2.0";
-    private static final String BITBUCKET_1_0_API_URL = BITBUCKET_API_URL + "/1.0";
 
-    private final OAuthTokenProvider tokenProvider;
+    private final OAuthTokenProvider               tokenProvider;
+    private final OAuthAuthorizationHeaderProvider headerProvider;
+
+    private String       bitbucketEndpoint;
+    private URLTemplates urlTemplates;
 
     @Inject
-    public Bitbucket(@NotNull final OAuthTokenProvider tokenProvider) {
+    public Bitbucket(OAuthTokenProvider tokenProvider,
+                     OAuthAuthorizationHeaderProvider headerProvider,
+                     HttpJsonRequestFactory requestFactory,
+                     @Named("che.api") String apiEndpoint) {
+
         this.tokenProvider = tokenProvider;
+        this.headerProvider = headerProvider;
+
+        String bitbucketEndpoint = "https://bitbucket.org";
+        try {
+            bitbucketEndpoint = requestFactory.fromUrl(apiEndpoint + "/bitbucket/endpoint")
+                                              .useGetMethod()
+                                              .request()
+                                              .asString();
+        } catch (Exception ignored) {
+        }
+        bitbucketEndpoint = bitbucketEndpoint.endsWith("/") ? bitbucketEndpoint.substring(0, bitbucketEndpoint.length() - 1)
+                                                            : bitbucketEndpoint;
+
+        this.bitbucketEndpoint = bitbucketEndpoint;
+
+        this.urlTemplates = isBitbucketServer() ? new BitbucketServerURLTemplates(bitbucketEndpoint) : new BitbucketHostedURLTemplates();
+    }
+
+    /**
+     * Get host url of bitbucket.
+     */
+    public String getEndpoint() throws ServerException {
+        return bitbucketEndpoint;
     }
 
     /**
@@ -86,9 +129,17 @@ public class Bitbucket {
      * @throws ServerException
      *         if any error occurs when parse.
      */
-    public BitbucketUser getUser() throws IOException, BitbucketException, ServerException {
-        final String response = getJson(BITBUCKET_2_0_API_URL + "/user", OK);
-        return parseJsonResponse(response, BitbucketUser.class);
+    public BitbucketUser getUser(String username) throws IOException, BitbucketException, ServerException {
+        if (isBitbucketServer()) {
+            //Need to check if user has permissions to retrieve full information from Bitbucket Server rest API.
+            //Other requests will not fail with 403 error, but may show empty data.
+            doRequest(GET, bitbucketEndpoint + "/rest/api/latest/users", OK, null, null);
+            final String response = getJson(urlTemplates.userUrl(username), OK);
+            return convertToBitbucketUser(parseJsonResponse(response, BitbucketServerUser.class));
+        } else {
+            final String response = getJson(urlTemplates.userUrl(null), OK);
+            return parseJsonResponse(response, BitbucketUser.class);
+        }
     }
 
     /**
@@ -113,8 +164,12 @@ public class Bitbucket {
         checkArgument(!isNullOrEmpty(owner), "owner");
         checkArgument(!isNullOrEmpty(repositorySlug), "repositorySlug");
 
-        final String response = getJson(BITBUCKET_2_0_API_URL + "/repositories/" + owner + "/" + repositorySlug, OK);
-        return parseJsonResponse(response, BitbucketRepository.class);
+        final String response = getJson(urlTemplates.repositoryUrl(owner, repositorySlug), OK);
+        if (isBitbucketServer()) {
+            return convertToBitbucketRepository(parseJsonResponse(response, BitbucketServerRepository.class));
+        } else {
+            return parseJsonResponse(response, BitbucketRepository.class);
+        }
     }
 
     /**
@@ -146,7 +201,7 @@ public class Bitbucket {
 
             final String nextPageUrl = repositoryPage.getNext();
             final String url =
-                    nextPageUrl == null ? BITBUCKET_2_0_API_URL + "/repositories/" + owner + "/" + repositorySlug + "/forks" : nextPageUrl;
+                    nextPageUrl == null ? urlTemplates.forksUrl(owner, repositorySlug) : nextPageUrl;
             repositoryPage = getBitbucketPage(url, BitbucketRepositoriesPage.class);
             repositories.addAll(repositoryPage.getValues());
 
@@ -184,7 +239,7 @@ public class Bitbucket {
         checkArgument(!isNullOrEmpty(repositorySlug), "repositorySlug");
         checkArgument(!isNullOrEmpty(forkName), "forkName");
 
-        final String url = BITBUCKET_1_0_API_URL + "/repositories/" + owner + "/" + repositorySlug + "/fork";
+        final String url = urlTemplates.forkRepositoryUrl(owner, repositorySlug);
         final String data = "name=" + encode(forkName, "UTF-8") + "&is_private=" + isForkPrivate;
         final String response = doRequest(POST, url, OK, APPLICATION_FORM_URLENCODED, data);
         return parseJsonResponse(response, BitbucketRepositoryFork.class);
@@ -214,19 +269,31 @@ public class Bitbucket {
         checkArgument(!isNullOrEmpty(repositorySlug), "repositorySlug");
 
         final List<BitbucketPullRequest> pullRequests = new ArrayList<>();
-        BitbucketPullRequestsPage pullRequestsPage = DtoFactory.getInstance().createDto(BitbucketPullRequestsPage.class);
+        if (isBitbucketServer()) {
+            BitbucketServerPullRequestsPage pullRequestsPage = null;
+            do {
+                final String url = urlTemplates.pullrequestUrl(owner, repositorySlug) +
+                                   (pullRequestsPage != null ? "?start=" + String.valueOf(pullRequestsPage.getNextPageStart()) : "");
 
-        do {
+                pullRequestsPage = getBitbucketPage(url, BitbucketServerPullRequestsPage.class);
+                pullRequests.addAll(pullRequestsPage.getValues()
+                                                    .stream()
+                                                    .map(BitbucketServerDTOConverter::convertToBitbucketPullRequest)
+                                                    .collect(Collectors.toList()));
 
-            final String nextPageUrl = pullRequestsPage.getNext();
-            final String url =
-                    nextPageUrl == null ? BITBUCKET_2_0_API_URL + "/repositories/" + owner + "/" + repositorySlug + "/pullrequests"
-                                        : nextPageUrl;
+            } while (!pullRequestsPage.isIsLastPage());
+        } else {
+            BitbucketPullRequestsPage pullRequestsPage = DtoFactory.getInstance().createDto(BitbucketPullRequestsPage.class);
 
-            pullRequestsPage = getBitbucketPage(url, BitbucketPullRequestsPage.class);
-            pullRequests.addAll(pullRequestsPage.getValues());
+            do {
+                final String nextPageUrl = pullRequestsPage.getNext();
+                final String url = nextPageUrl == null ? urlTemplates.pullrequestUrl(owner, repositorySlug) : nextPageUrl;
 
-        } while (pullRequestsPage.getNext() != null);
+                pullRequestsPage = getBitbucketPage(url, BitbucketPullRequestsPage.class);
+                pullRequests.addAll(pullRequestsPage.getValues());
+
+            } while (pullRequestsPage.getNext() != null);
+        }
 
         return pullRequests;
 
@@ -251,9 +318,18 @@ public class Bitbucket {
         checkArgument(!isNullOrEmpty(repositorySlug), "repositorySlug");
         checkArgument(pullRequest != null, "pullRequest");
 
-        final String url = BITBUCKET_2_0_API_URL + "/repositories/" + owner + "/" + repositorySlug + "/pullrequests";
-        final String response = postJson(url, CREATED, toJson(pullRequest, CAMEL_UNDERSCORE));
-        return parseJsonResponse(response, BitbucketPullRequest.class);
+        final String url = urlTemplates.pullrequestUrl(owner, repositorySlug);
+        if (isBitbucketServer()) {
+            final String response = postJson(url, CREATED, toJson(convertToBitbucketServerPullRequest(pullRequest)));
+            return convertToBitbucketPullRequest(parseJsonResponse(response, BitbucketServerPullRequest.class));
+        } else {
+            final String response = postJson(url, CREATED, toJson(pullRequest, CAMEL_UNDERSCORE));
+            return parseJsonResponse(response, BitbucketPullRequest.class);
+        }
+    }
+
+    private boolean isBitbucketServer() {
+        return !"https://bitbucket.org".equals(bitbucketEndpoint);
     }
 
     private <T> T getBitbucketPage(final String url,
@@ -295,11 +371,22 @@ public class Bitbucket {
                 }
             }
 
-            final OAuthToken token = tokenProvider.getToken("bitbucket", getUserId());
-            if (token != null) {
-                http.setRequestProperty(AUTHORIZATION, "Bearer " +  token.getToken());
+            if (isBitbucketServer()) {
+                String authorizationHeader = headerProvider.getAuthorizationHeader("bitbucket-server",
+                                                                                   getUserId(),
+                                                                                   requestMethod,
+                                                                                   requestUrl,
+                                                                                   null);
+                if (authorizationHeader != null) {
+                    http.setRequestProperty(AUTHORIZATION, authorizationHeader);
+                }
+            } else {
+                final OAuthToken token = tokenProvider.getToken("bitbucket", getUserId());
+                if (token != null) {
+                    http.setRequestProperty(AUTHORIZATION, "Bearer " + token.getToken());
+                }
+                http.setRequestProperty(ACCEPT, APPLICATION_JSON);
             }
-            http.setRequestProperty(ACCEPT, APPLICATION_JSON);
 
             if (data != null && !data.isEmpty()) {
                 http.setRequestProperty(CONTENT_TYPE, contentType);
@@ -321,6 +408,8 @@ public class Bitbucket {
 
             return result;
 
+        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+            return null;
         } finally {
             if (http != null) {
                 http.disconnect();
