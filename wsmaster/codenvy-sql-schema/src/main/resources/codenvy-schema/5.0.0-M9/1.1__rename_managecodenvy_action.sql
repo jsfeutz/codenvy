@@ -12,6 +12,7 @@
 -- is strictly forbidden unless prior written permission is obtained
 -- from Codenvy S.A..
 --
+
 UPDATE systempermissions_actions
 SET actions='manageSystem'
 WHERE actions='manageCodenvy';
