@@ -369,7 +369,7 @@ public class BitbucketHostingService implements VcsHostingService {
             return Promises.reject(JsPromiseError.create("Error accessing current workspace"));
         }
         String oauthPath = "https://bitbucket.org".equals(bitbucketEndpoint) ? "/oauth/authenticate?oauth_provider=bitbucket&userId=" :
-                           "/oauth/1.0/authenticate?oauth_provider=bitbucket-server&request_type=post&signature_method=rsa&userId=";
+                           "/oauth/1.0/authenticate?oauth_provider=bitbucket-server&request_method=post&signature_method=rsa&userId=";
 
         final String authUrl = baseUrl
                                + oauthPath
