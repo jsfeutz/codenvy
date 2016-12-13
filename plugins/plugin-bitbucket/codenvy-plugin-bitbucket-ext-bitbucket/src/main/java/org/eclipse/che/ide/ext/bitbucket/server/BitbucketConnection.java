@@ -1,3 +1,17 @@
+/*
+ *  [2012] - [2016] Codenvy, S.A.
+ *  All Rights Reserved.
+ *
+ * NOTICE:  All information contained herein is, and remains
+ * the property of Codenvy S.A. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to Codenvy S.A.
+ * and its suppliers and may be covered by U.S. and Foreign Patents,
+ * patents in process, and are protected by trade secret or copyright law.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Codenvy S.A..
+ */
 package org.eclipse.che.ide.ext.bitbucket.server;
 
 import org.eclipse.che.api.core.ServerException;
@@ -30,31 +44,63 @@ import static org.eclipse.che.ide.rest.HTTPMethod.GET;
 import static org.eclipse.che.ide.rest.HTTPMethod.POST;
 import static org.eclipse.che.ide.rest.HTTPStatus.OK;
 
+/**
+ * Connection to Bitbucket rest API.
+ *
+ * @author Igor Vinokur
+ */
 public abstract class BitbucketConnection {
 
+    /** @see Bitbucket#getUser(String) */
     abstract BitbucketUser getUser(String username) throws ServerException, IOException, BitbucketException;
 
+    /** @see Bitbucket#getRepository(String, String) */
     abstract BitbucketRepository getRepository(@NotNull final String owner,
-                                      @NotNull final String repositorySlug) throws IOException, BitbucketException, ServerException;
+                                               @NotNull final String repositorySlug) throws IOException,
+                                                                                            BitbucketException,
+                                                                                            ServerException;
 
+    /** @see Bitbucket#getRepositoryPullRequests(String, String) */
     abstract List<BitbucketPullRequest> getRepositoryPullRequests(@NotNull final String owner,
-                                                         @NotNull final String repositorySlug)
+                                                                  @NotNull final String repositorySlug)
             throws ServerException, IOException, BitbucketException;
 
+    /** @see Bitbucket#openPullRequest(String, String, BitbucketPullRequest) */
     abstract BitbucketPullRequest openPullRequest(@NotNull final String owner,
-                                         @NotNull final String repositorySlug,
-                                         @NotNull final BitbucketPullRequest pullRequest)
-            throws ServerException, IOException, BitbucketException;
+                                                  @NotNull final String repositorySlug,
+                                                  @NotNull final BitbucketPullRequest pullRequest) throws ServerException,
+                                                                                                          IOException,
+                                                                                                          BitbucketException;
 
+    /** @see Bitbucket#openPullRequest(String, String, BitbucketPullRequest) */
     abstract public List<BitbucketRepository> getRepositoryForks(@NotNull final String owner, @NotNull final String repositorySlug)
             throws IOException, BitbucketException, ServerException, IllegalArgumentException;
 
+    /** @see Bitbucket#forkRepository(String, String, String, boolean) */
     abstract public BitbucketRepositoryFork forkRepository(@NotNull final String owner,
-                                                  @NotNull final String repositorySlug,
-                                                  @NotNull final String forkName,
-                                                  final boolean isForkPrivate) throws IOException, BitbucketException, ServerException;
+                                                           @NotNull final String repositorySlug,
+                                                           @NotNull final String forkName,
+                                                           final boolean isForkPrivate) throws IOException,
+                                                                                               BitbucketException,
+                                                                                               ServerException;
 
+    /**
+     * Add authorization header to given HTTP connection.
+     *
+     * @param http
+     *         HTTP connection
+     * @param requestMethod
+     *         request method. Is needed when using oAuth1
+     * @param requestUrl
+     *         request url. Is needed when using oAuth1
+     * @throws IOException
+     *         if i/o error occurs when try to refresh expired oauth token
+     */
     abstract void authorizeRequest(HttpURLConnection http, String requestMethod, String requestUrl) throws IOException;
+
+    String getUserId() {
+        return EnvironmentContext.getCurrent().getSubject().getUserId();
+    }
 
     <T> T getBitbucketPage(final String url,
                            final Class<T> pageClass) throws IOException, BitbucketException, ServerException {
@@ -134,7 +180,7 @@ public abstract class BitbucketConnection {
         }
     }
 
-    BitbucketException fault(final HttpURLConnection http) throws IOException {
+    private BitbucketException fault(final HttpURLConnection http) throws IOException {
         final int responseCode = http.getResponseCode();
 
         try (final InputStream stream = (responseCode >= 400 ? http.getErrorStream() : http.getInputStream())) {
@@ -149,7 +195,7 @@ public abstract class BitbucketConnection {
         }
     }
 
-    String readBody(final InputStream input, final int contentLength) throws IOException {
+    private String readBody(final InputStream input, final int contentLength) throws IOException {
         String body = null;
         if (contentLength > 0) {
             byte[] b = new byte[contentLength];
@@ -169,9 +215,5 @@ public abstract class BitbucketConnection {
             body = bout.toString();
         }
         return body;
-    }
-
-    String getUserId() {
-        return EnvironmentContext.getCurrent().getSubject().getUserId();
     }
 }

@@ -15,6 +15,8 @@
 
 package com.codenvy.service.bitbucket;
 
+import org.eclipse.che.api.core.rest.Service;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.GET;
@@ -26,12 +28,12 @@ import javax.ws.rs.Path;
  * @author Igor Vinokur
  */
 @Path("bitbucket")
-public class BitbucketService {
+public class BitbucketConfigurationService extends Service {
 
     private final String bitbucketEndpoint;
 
     @Inject
-    public BitbucketService(@Named ("bitbucket.endpoint") String bitbucketEndpoint) {
+    public BitbucketConfigurationService(@Named ("bitbucket.endpoint") String bitbucketEndpoint) {
         this.bitbucketEndpoint = bitbucketEndpoint;
     }
 

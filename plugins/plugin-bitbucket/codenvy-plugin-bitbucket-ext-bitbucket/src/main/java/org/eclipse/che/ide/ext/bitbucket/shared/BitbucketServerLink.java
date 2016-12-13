@@ -27,7 +27,11 @@ public interface BitbucketServerLink {
 
     void setName(String name);
 
+    BitbucketServerLink withName(String name);
+
     String getHref();
 
     void setHref(String href);
+
+    BitbucketServerLink withHref(String href);
 }

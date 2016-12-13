@@ -1,3 +1,17 @@
+/*
+ *  [2012] - [2016] Codenvy, S.A.
+ *  All Rights Reserved.
+ *
+ * NOTICE:  All information contained herein is, and remains
+ * the property of Codenvy S.A. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to Codenvy S.A.
+ * and its suppliers and may be covered by U.S. and Foreign Patents,
+ * patents in process, and are protected by trade secret or copyright law.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Codenvy S.A..
+ */
 package org.eclipse.che.ide.ext.bitbucket.server;
 
 import org.eclipse.che.api.auth.oauth.OAuthTokenProvider;
@@ -10,7 +24,6 @@ import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepository;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepositoryFork;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketUser;
 
-import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -29,14 +42,18 @@ import static org.eclipse.che.ide.rest.HTTPMethod.POST;
 import static org.eclipse.che.ide.rest.HTTPStatus.CREATED;
 import static org.eclipse.che.ide.rest.HTTPStatus.OK;
 
+/**
+ * Implementation of {@link BitbucketConnection} for hosted version of Bitbucket.
+ *
+ * @author Igor Vinokur
+ */
 public class BitbucketConnectionImpl extends BitbucketConnection {
 
     private final URLTemplates urlTemplates;
+    private final OAuthTokenProvider tokenProvider;
 
-    @Inject
-    private OAuthTokenProvider tokenProvider;
-
-    BitbucketConnectionImpl() {
+    BitbucketConnectionImpl(OAuthTokenProvider tokenProvider) {
+        this.tokenProvider = tokenProvider;
         this.urlTemplates = new BitbucketHostedURLTemplates();
     }
 
@@ -55,8 +72,10 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
     }
 
     @Override
-    public List<BitbucketPullRequest> getRepositoryPullRequests(@NotNull String owner, @NotNull String repositorySlug)
-            throws ServerException, IOException, BitbucketException {
+    public List<BitbucketPullRequest> getRepositoryPullRequests(@NotNull String owner, @NotNull String repositorySlug) throws
+                                                                                                                       ServerException,
+                                                                                                                       IOException,
+                                                                                                                       BitbucketException {
         final List<BitbucketPullRequest> pullRequests = new ArrayList<>();
         BitbucketPullRequestsPage pullRequestsPage = newDto(BitbucketPullRequestsPage.class);
 
@@ -85,16 +104,17 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
     }
 
     @Override
-    public List<BitbucketRepository> getRepositoryForks(@NotNull String owner, @NotNull String repositorySlug)
-            throws IOException, BitbucketException, ServerException, IllegalArgumentException {
+    public List<BitbucketRepository> getRepositoryForks(@NotNull String owner, @NotNull String repositorySlug) throws IOException,
+                                                                                                                      BitbucketException,
+                                                                                                                      ServerException,
+                                                                                                                      IllegalArgumentException {
         final List<BitbucketRepository> repositories = new ArrayList<>();
         BitbucketRepositoriesPage repositoryPage = newDto(BitbucketRepositoriesPage.class);
 
         do {
 
             final String nextPageUrl = repositoryPage.getNext();
-            final String url =
-                    nextPageUrl == null ? urlTemplates.forksUrl(owner, repositorySlug) : nextPageUrl;
+            final String url = nextPageUrl == null ? urlTemplates.forksUrl(owner, repositorySlug) : nextPageUrl;
             repositoryPage = getBitbucketPage(url, BitbucketRepositoriesPage.class);
             repositories.addAll(repositoryPage.getValues());
 
@@ -107,8 +127,9 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
     public BitbucketRepositoryFork forkRepository(@NotNull String owner,
                                                   @NotNull String repositorySlug,
                                                   @NotNull String forkName,
-                                                  boolean isForkPrivate)
-            throws IOException, BitbucketException, ServerException {
+                                                  boolean isForkPrivate) throws IOException,
+                                                                                BitbucketException,
+                                                                                ServerException {
 
         final String url = urlTemplates.forkRepositoryUrl(owner, repositorySlug);
         final String data = "name=" + encode(forkName, "UTF-8") + "&is_private=" + isForkPrivate;

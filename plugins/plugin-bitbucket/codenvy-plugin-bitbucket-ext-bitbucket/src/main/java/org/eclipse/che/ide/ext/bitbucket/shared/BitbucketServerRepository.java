@@ -28,30 +28,17 @@ public interface BitbucketServerRepository extends BitbucketRepository{
 
     void setOrigin(BitbucketServerRepository parent);
 
+    BitbucketServerRepository withOrigin(BitbucketServerRepository parent);
+
     BitbucketServerProject getProject();
 
     void setProject(BitbucketServerProject project);
+
+    BitbucketServerRepository withProject(BitbucketServerProject project);
 
     String getSlug();
 
     void setSlug(String slug);
 
-    @DTO
-    interface BitbucketServerProject {
-        String getKey();
-
-        void setKey(String key);
-
-        int getId();
-
-        void setId(int id);
-
-        String getName();
-
-        void setName(String name);
-
-        BitbucketServerUser getOwner();
-
-        void setOwner(BitbucketServerUser user);
-    }
+    BitbucketServerRepository withSlug(String slug);
 }

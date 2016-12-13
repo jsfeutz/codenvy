@@ -17,6 +17,8 @@ package org.eclipse.che.ide.ext.bitbucket.server;
 import static org.eclipse.che.ide.ext.bitbucket.shared.Preconditions.checkArgument;
 import static org.eclipse.che.ide.ext.bitbucket.shared.StringHelper.isNullOrEmpty;
 
+import org.eclipse.che.api.auth.oauth.OAuthAuthorizationHeaderProvider;
+import org.eclipse.che.api.auth.oauth.OAuthTokenProvider;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.rest.HttpJsonRequestFactory;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketPullRequest;
@@ -44,7 +46,9 @@ public class Bitbucket {
     private BitbucketConnection bitbucketConnection;
 
     @Inject
-    public Bitbucket(HttpJsonRequestFactory requestFactory,
+    public Bitbucket(OAuthTokenProvider tokenProvider,
+                     OAuthAuthorizationHeaderProvider headerProvider,
+                     HttpJsonRequestFactory requestFactory,
                      @Named("che.api") String apiEndpoint) {
 
         String endpoint = null;
@@ -59,8 +63,8 @@ public class Bitbucket {
                                                               : endpoint;
 
         this.bitbucketEndpoint = endpoint;
-        bitbucketConnection = "https://bitbucket.org".equals(endpoint) ? new BitbucketConnectionImpl()
-                                                                       : new BitbucketServerConnectionImpl(endpoint);
+        bitbucketConnection = "https://bitbucket.org".equals(endpoint) ? new BitbucketConnectionImpl(tokenProvider)
+                                                                       : new BitbucketServerConnectionImpl(endpoint, headerProvider);
     }
 
     /**

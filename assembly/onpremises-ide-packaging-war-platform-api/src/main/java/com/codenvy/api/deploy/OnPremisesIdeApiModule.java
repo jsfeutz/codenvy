@@ -44,6 +44,7 @@ import com.codenvy.plugin.github.factory.resolver.GithubFactoryParametersResolve
 import com.codenvy.plugin.gitlab.factory.resolver.GitlabFactoryParametersResolver;
 import com.codenvy.report.ReportModule;
 import com.codenvy.resource.api.ResourceModule;
+import com.codenvy.service.bitbucket.BitbucketConfigurationService;
 import com.codenvy.service.systemram.DockerBasedSystemRamInfoProvider;
 import com.codenvy.service.systemram.SystemRamInfoProvider;
 import com.codenvy.service.systemram.SystemRamLimitMessageSender;
@@ -178,7 +179,7 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         bind(org.eclipse.che.api.auth.oauth.OAuthTokenProvider.class).to(OAuthAuthenticatorTokenProvider.class);
         bind(org.eclipse.che.security.oauth1.OAuthAuthenticationService.class);
 
-        bind(com.codenvy.service.bitbucket.BitbucketService.class);
+        bind(BitbucketConfigurationService.class);
 
         bind(FactoryAcceptValidator.class).to(org.eclipse.che.api.factory.server.impl.FactoryAcceptValidatorImpl.class);
         bind(FactoryCreateValidator.class).to(org.eclipse.che.api.factory.server.impl.FactoryCreateValidatorImpl.class);
