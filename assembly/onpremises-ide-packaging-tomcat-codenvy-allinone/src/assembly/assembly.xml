@@ -38,7 +38,7 @@
             <outputDirectory>agents/linux_amd64/terminal</outputDirectory>
             <outputFileNameMapping>websocket-terminal-linux_amd64.tar.gz</outputFileNameMapping>
             <includes>
-                <include>com.codenvy.lib:codenvy-websocket-terminal:tar.gz:linux_amd64</include>
+                <include>org.eclipse.che:exec-agent:tar.gz:linux_amd64</include>
             </includes>
         </dependencySet>
         <dependencySet>
@@ -47,7 +47,7 @@
             <outputDirectory>agents/linux_arm7/terminal</outputDirectory>
             <outputFileNameMapping>websocket-terminal-linux_arm7.tar.gz</outputFileNameMapping>
             <includes>
-                <include>com.codenvy.lib:codenvy-websocket-terminal:tar.gz:linux_arm7</include>
+                <include>org.eclipse.che:exec-agent:tar.gz:linux_arm7</include>
             </includes>
         </dependencySet>
         <dependencySet>
@@ -117,6 +117,15 @@
                     <exclude>META-INF/**</exclude>
                 </excludes>
             </unpackOptions>
+        </dependencySet>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <unpack>false</unpack>
+            <outputDirectory>webapps</outputDirectory>
+            <outputFileNameMapping>docs.war</outputFileNameMapping>
+            <includes>
+                <include>com.codenvy:docs</include>
+            </includes>
         </dependencySet>
     </dependencySets>
     <fileSets>
