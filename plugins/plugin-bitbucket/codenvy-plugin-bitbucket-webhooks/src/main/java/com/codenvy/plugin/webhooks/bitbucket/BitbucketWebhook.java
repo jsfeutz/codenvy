@@ -27,14 +27,14 @@ import java.util.Set;
  *
  * @author Stephane Tournie
  */
-public class BitbucketWebhook {
+class BitbucketWebhook {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitbucketWebhook.class);
 
     private final String      repositoryUrl;
     private final Set<String> factoriesIds;
 
-    public BitbucketWebhook(String repositoryUrl, String... factoriesIds) {
+    BitbucketWebhook(String repositoryUrl, String... factoriesIds) {
         this.repositoryUrl = repositoryUrl;
 
         if (factoriesIds.length == 0) {
@@ -43,11 +43,11 @@ public class BitbucketWebhook {
         this.factoriesIds = new HashSet<String>(Arrays.asList(factoriesIds));
     }
 
-    public String getRepositoryUrl() {
+    String getRepositoryUrl() {
         return repositoryUrl;
     }
 
-    public Set<String> getFactoriesIds() {
+    Set<String> getFactoriesIds() {
         return factoriesIds;
     }
 }

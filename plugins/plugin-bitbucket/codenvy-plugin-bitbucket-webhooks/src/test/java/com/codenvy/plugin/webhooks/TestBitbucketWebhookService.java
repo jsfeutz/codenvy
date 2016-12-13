@@ -84,14 +84,14 @@ public class TestBitbucketWebhookService {
     @Test
     public void testGithubWebhookPushEventNoConnector() throws Exception {
         HttpServletRequest mockRequest = prepareRequest(Service.GITHUB, "push");
-        Response response = fakeBitbucketWebhookService.handleGithubWebhookEvent(mockRequest);
+        Response response = fakeBitbucketWebhookService.handleBitbucketWebhookEvent(mockRequest);
         Assert.assertTrue(response.getStatus() == OK.getStatusCode());
     }
 
     @Test
     public void testGithubWebhookPullRequestEventNoConnector() throws Exception {
         HttpServletRequest mockRequest = prepareRequest(Service.GITHUB, "pull_request");
-        Response response = fakeBitbucketWebhookService.handleGithubWebhookEvent(mockRequest);
+        Response response = fakeBitbucketWebhookService.handleBitbucketWebhookEvent(mockRequest);
         Assert.assertTrue(response.getStatus() == OK.getStatusCode());
     }
 

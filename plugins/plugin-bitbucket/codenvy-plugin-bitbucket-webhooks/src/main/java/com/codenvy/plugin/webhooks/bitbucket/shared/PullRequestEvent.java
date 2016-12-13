@@ -20,8 +20,6 @@ import org.eclipse.che.dto.shared.JsonFieldName;
 @DTO
 public interface PullRequestEvent {
 
-    public String PULL_REQUEST_FIELD = "pull_request";
-
     String getAction();
 
     void setAction(String action);
@@ -36,7 +34,6 @@ public interface PullRequestEvent {
     PullRequestEvent withNumber(int number);
 
 
-    @JsonFieldName(PULL_REQUEST_FIELD)
     PullRequest getPullRequest();
 
     void setPullRequest(PullRequest pullRequest);

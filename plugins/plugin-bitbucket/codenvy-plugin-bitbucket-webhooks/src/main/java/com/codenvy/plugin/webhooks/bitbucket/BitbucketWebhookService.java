@@ -55,16 +55,16 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Api(
-        value = "/github-webhook",
-        description = "GitHub webhooks handler"
+        value = "/bitbucket-webhook",
+        description = "Bitbucket webhooks handler"
 )
-@Path("/github-webhook")
+@Path("/bitbucket-webhook")
 public class BitbucketWebhookService extends BaseWebhookService {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitbucketWebhookService.class);
 
-    private static final String GITHUB_WEBHOOKS_PROPERTIES_FILENAME = "github-webhooks.properties";
-    private static final String GITHUB_REQUEST_HEADER               = "X-GitHub-Event";
+    private static final String BITBUCKET_WEBHOOKS_PROPERTIES_FILENAME = "bitbucket-webhooks.properties";
+    private static final String BITBUCKET_REQUEST_HEADER               = "X-Bitbucket-Event";
 
     @Inject
     public BitbucketWebhookService(final AuthConnection authConnection, final FactoryConnection factoryConnection) {
@@ -80,27 +80,28 @@ public class BitbucketWebhookService extends BaseWebhookService {
                   })
     @POST
     @Consumes(APPLICATION_JSON)
-    public Response handleGithubWebhookEvent(@ApiParam(value = "New contribution", required = true)
-                                             @Context HttpServletRequest request)
+    public Response handleBitbucketWebhookEvent(@ApiParam(value = "New contribution", required = true)
+                                                @Context HttpServletRequest request)
             throws ServerException {
 
         Response response = Response.ok().build();
         try (ServletInputStream inputStream = request.getInputStream()) {
             if (inputStream != null) {
-                String githubHeader = request.getHeader(GITHUB_REQUEST_HEADER);
-                if (!isNullOrEmpty(githubHeader)) {
-                    switch (githubHeader) {
+                String bitbucketHeader = request.getHeader(BITBUCKET_REQUEST_HEADER);
+                if (!isNullOrEmpty(bitbucketHeader)) {
+                    switch (bitbucketHeader) {
                         case "push":
                             final PushEvent pushEvent = DtoFactory.getInstance().createDtoFromJson(inputStream, PushEvent.class);
                             handlePushEvent(pushEvent);
                             break;
                         case "pull_request":
-                            final PullRequestEvent PRevent = DtoFactory.getInstance().createDtoFromJson(inputStream, PullRequestEvent.class);
+                            final PullRequestEvent PRevent =
+                                    DtoFactory.getInstance().createDtoFromJson(inputStream, PullRequestEvent.class);
                             handlePullRequestEvent(PRevent);
                             break;
                         default:
                             response = Response.accepted(new GenericEntity<>(
-                                    "GitHub message \'" + githubHeader + "\' received. It isn't intended to be processed.", String.class))
+                                    "GitHub message \'" + bitbucketHeader + "\' received. It isn't intended to be processed.", String.class))
                                                .build();
                             break;
                     }
@@ -174,15 +175,15 @@ public class BitbucketWebhookService extends BaseWebhookService {
         EnvironmentContext.getCurrent().setSubject(new TokenSubject());
 
         // Check that event indicates a successful merging
-        final String action = prEvent.getAction();
-        if (!"closed".equals(action)) {
-            throw new ServerException(
-                    "PullRequest Event action is " + action + ". " + this.getClass().getSimpleName() + " do not handle this one.");
-        }
-        final boolean isMerged = prEvent.getPullRequest().getMerged();
-        if (!isMerged) {
-            throw new ServerException("Pull Request was closed with unmerged commits !");
-        }
+//        final String action = prEvent.getAction();
+//        if (!"closed".equals(action)) {
+//            throw new ServerException(
+//                    "PullRequest Event action is " + action + ". " + this.getClass().getSimpleName() + " do not handle this one.");
+//        }
+//        final boolean isMerged = prEvent.getPullRequest().getMerged();
+//        if (!isMerged) {
+//            throw new ServerException("Pull Request was closed with unmerged commits !");
+//        }
 
         // Get head repository data
         final String prHeadRepositoryHtmlUrl = prEvent.getPullRequest().getHead().getRepo().getHtmlUrl();
@@ -226,7 +227,7 @@ public class BitbucketWebhookService extends BaseWebhookService {
             throws ServerException {
 
         // Get webhook configured for given repository
-        final Optional<BitbucketWebhook> webhook = getGitHubWebhook(baseRepositoryHtmlUrl);
+        final Optional<BitbucketWebhook> webhook = getBitbucketWebhook(baseRepositoryHtmlUrl);
 
         final BitbucketWebhook w = webhook.orElseThrow(
                 () -> new ServerException("No webhook configured for repository " + baseRepositoryHtmlUrl));
@@ -243,7 +244,7 @@ public class BitbucketWebhookService extends BaseWebhookService {
      * @return the webhook configured for the repository or null if no webhook is configured for this repository
      * @throws ServerException
      */
-    private Optional<BitbucketWebhook> getGitHubWebhook(String repositoryUrl) throws ServerException {
+    private Optional<BitbucketWebhook> getBitbucketWebhook(String repositoryUrl) throws ServerException {
         List<BitbucketWebhook> webhooks = getGitHubWebhooks();
         BitbucketWebhook webhook = null;
         for (BitbucketWebhook w : webhooks) {
@@ -257,14 +258,14 @@ public class BitbucketWebhookService extends BaseWebhookService {
 
     /**
      * Get all configured webhooks
-     *
+     * <p>
      * GitHub webhook: [webhook-name]=[webhook-type],[repository-url],[factory-id];[factory-id];...;[factory-id]
      *
      * @return the list of all webhooks contained in GITHUB_WEBHOOKS_PROPERTIES_FILENAME properties fil
      */
     private static List<BitbucketWebhook> getGitHubWebhooks() throws ServerException {
         List<BitbucketWebhook> webhooks = new ArrayList<>();
-        Properties webhooksProperties = getProperties(GITHUB_WEBHOOKS_PROPERTIES_FILENAME);
+        Properties webhooksProperties = getProperties(BITBUCKET_WEBHOOKS_PROPERTIES_FILENAME);
         Set<String> keySet = webhooksProperties.stringPropertyNames();
         keySet.stream().forEach(key -> {
             String value = webhooksProperties.getProperty(key);
