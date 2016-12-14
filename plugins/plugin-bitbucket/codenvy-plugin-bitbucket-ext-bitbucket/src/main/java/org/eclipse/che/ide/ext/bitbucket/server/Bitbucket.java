@@ -66,7 +66,6 @@ public class Bitbucket {
         }
         endpoint = endpoint != null && endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1)
                                                               : endpoint;
-
         this.bitbucketEndpoint = endpoint;
         bitbucketConnection = "https://bitbucket.org".equals(endpoint) ? new BitbucketConnectionImpl(tokenProvider)
                                                                        : new BitbucketServerConnectionImpl(endpoint, headerProvider);
