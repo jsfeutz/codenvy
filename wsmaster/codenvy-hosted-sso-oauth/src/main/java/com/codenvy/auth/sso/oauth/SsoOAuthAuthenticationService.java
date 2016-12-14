@@ -36,9 +36,10 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.emptyList;
-import static org.eclipse.che.security.OAuthUtils.getParameter;
-import static org.eclipse.che.security.OAuthUtils.getRequestParameters;
-import static org.eclipse.che.security.OAuthUtils.getRequestUrl;
+import static org.eclipse.che.commons.lang.UrlUtils.getParameter;
+import static org.eclipse.che.commons.lang.UrlUtils.getQueryParametersFromState;
+import static org.eclipse.che.commons.lang.UrlUtils.getRequestUrl;
+import static org.eclipse.che.commons.lang.UrlUtils.getState;
 
 /**
  * RESTful wrapper for OAuthAuthenticator.
@@ -55,7 +56,7 @@ public class SsoOAuthAuthenticationService extends OAuthAuthenticationService {
     @Override
     public Response callback(@QueryParam("errorValues") List<String> errorValues) throws OAuthAuthenticationException, BadRequestException {
         URL requestUrl = getRequestUrl(uriInfo);
-        Map<String, List<String>> params = getRequestParameters(requestUrl);
+        Map<String, List<String>> params = getQueryParametersFromState(getState(requestUrl));
         if (errorValues != null && errorValues.contains("access_denied")) {
             return Response.temporaryRedirect(
                     uriInfo.getRequestUriBuilder().replacePath(errorPage).replaceQuery(null).build()).build();

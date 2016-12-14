@@ -16,15 +16,18 @@ package org.eclipse.che.ide.ext.bitbucket.server;
 
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketLink;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketPullRequest;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketPullRequest.BitbucketPullRequestBranch;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketPullRequest.BitbucketPullRequestLocation;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepository;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerPullRequest;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerPullRequest.BitbucketServerPullRequestRef;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerRepository;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerUser;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerProject;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketUser;
+import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketUser.BitbucketUserLinks;
 
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
-import static org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerRepository.*;
 
 /**
  * Adapter for BitbucketServer DTOs.
@@ -34,81 +37,63 @@ import static org.eclipse.che.ide.ext.bitbucket.shared.BitbucketServerRepository
 public class BitbucketServerDTOConverter {
 
     static BitbucketUser convertToBitbucketUser(BitbucketServerUser bitbucketServerUser) {
-        BitbucketUser bitbucketUser = newDto(BitbucketUser.class);
-        BitbucketUser.BitbucketUserLinks bitbucketUserLinks = newDto(BitbucketUser.BitbucketUserLinks.class);
-        BitbucketLink bitbucketLink = newDto(BitbucketLink.class);
 
-        bitbucketUser.setUsername(bitbucketServerUser.getName());
-        bitbucketUser.setDisplayName(bitbucketServerUser.getDisplayName());
-        bitbucketUser.setUuid(bitbucketServerUser.getId());
+        BitbucketLink bitbucketLink = newDto(BitbucketLink.class).withHref(bitbucketServerUser.getLinks().getSelf().get(0).getHref())
+                                                                 .withName(bitbucketServerUser.getLinks().getSelf().get(0).getName());
 
-        bitbucketLink.setHref(bitbucketServerUser.getLinks().getSelf().get(0).getHref());
-        bitbucketLink.setName(bitbucketServerUser.getLinks().getSelf().get(0).getName());
+        BitbucketUserLinks bitbucketUserLinks = newDto(BitbucketUserLinks.class).withSelf(bitbucketLink);
 
-        bitbucketUserLinks.setSelf(bitbucketLink);
-        bitbucketUser.setLinks(bitbucketUserLinks);
-
-        return bitbucketUser;
+        return newDto(BitbucketUser.class).withUsername(bitbucketServerUser.getName())
+                                          .withDisplayName(bitbucketServerUser.getDisplayName())
+                                          .withUuid(bitbucketServerUser.getId()).withLinks(bitbucketUserLinks);
     }
 
     static BitbucketRepository convertToBitbucketRepository(BitbucketServerRepository bitbucketServerRepository) {
-        bitbucketServerRepository.setFullName(bitbucketServerRepository.getName());
-        bitbucketServerRepository.setParent(bitbucketServerRepository.getOrigin() == null ? null :
-                                            convertToBitbucketRepository(bitbucketServerRepository.getOrigin()));
+
         BitbucketServerUser owner = bitbucketServerRepository.getProject().getOwner();
-        bitbucketServerRepository.setOwner(owner == null ? null : convertToBitbucketUser(owner));
+        newDto(BitbucketRepository.class).withName(bitbucketServerRepository.getName())
+                                         .withParent(bitbucketServerRepository.getOrigin() == null ? null :
+                                                     convertToBitbucketRepository(bitbucketServerRepository.getOrigin()))
+                                         .withOwner(owner == null ? null : convertToBitbucketUser(owner));
 
         return bitbucketServerRepository;
     }
 
     static BitbucketPullRequest convertToBitbucketPullRequest(BitbucketServerPullRequest pullRequest) {
-        BitbucketPullRequest bitbucketPullRequest = newDto(BitbucketPullRequest.class);
-        bitbucketPullRequest.setDescription(pullRequest.getDescription());
-        bitbucketPullRequest.setTitle(pullRequest.getTitle());
-        bitbucketPullRequest.setAuthor(convertToBitbucketUser(pullRequest.getAuthor().getUser()));
-        bitbucketPullRequest.setId(pullRequest.getId());
-        BitbucketPullRequest.BitbucketPullRequestLocation location = newDto(BitbucketPullRequest.BitbucketPullRequestLocation.class);
-        BitbucketPullRequest.BitbucketPullRequestBranch branch = newDto(BitbucketPullRequest.BitbucketPullRequestBranch.class);
-        branch.setName(pullRequest.getFromRef().getDisplayId());
-        branch.setName(pullRequest.getFromRef().getDisplayId());
-        location.setBranch(branch);
-        bitbucketPullRequest.setSource(location);
-        bitbucketPullRequest.setState(BitbucketPullRequest.State.valueOf(pullRequest.getState().toString()));
+        BitbucketPullRequestBranch branch = newDto(BitbucketPullRequestBranch.class).withName(pullRequest.getFromRef().getDisplayId());
+        BitbucketPullRequestLocation location = newDto(BitbucketPullRequestLocation.class).withBranch(branch);
 
-        return bitbucketPullRequest;
+        return newDto(BitbucketPullRequest.class).withDescription(pullRequest.getDescription())
+                                                 .withTitle(pullRequest.getTitle())
+                                                 .withAuthor(convertToBitbucketUser(pullRequest.getAuthor().getUser()))
+                                                 .withId(pullRequest.getId()).withSource(location)
+                                                 .withState(BitbucketPullRequest.State.valueOf(pullRequest.getState().toString()));
     }
 
     static BitbucketServerPullRequest convertToBitbucketServerPullRequest(BitbucketPullRequest pullRequest) {
 
-        BitbucketServerPullRequest bitbucketServerPullRequest = newDto(BitbucketServerPullRequest.class);
-        bitbucketServerPullRequest.setId(pullRequest.getId());
-        bitbucketServerPullRequest.setTitle(pullRequest.getTitle());
-        bitbucketServerPullRequest.setDescription(pullRequest.getDescription());
-
         String[] source = pullRequest.getSource().getRepository().getFullName().split("/");
-        BitbucketServerPullRequestRef pullRequestFromRef = newDto(BitbucketServerPullRequestRef.class);
-        pullRequestFromRef.setId("refs/heads/" + pullRequest.getSource().getBranch().getName());
-        BitbucketServerRepository fromRepository = newDto(BitbucketServerRepository.class);
-        fromRepository.setSlug(source[1]);
-
-        BitbucketServerProject projectFrom = newDto(BitbucketServerProject.class);
-        projectFrom.setKey("~" + source[0]);
-        fromRepository.setProject(projectFrom);
-        pullRequestFromRef.setRepository(fromRepository);
-        bitbucketServerPullRequest.setFromRef(pullRequestFromRef);
-
         String[] destination = pullRequest.getDestination().getRepository().getFullName().split("/");
-        BitbucketServerPullRequestRef pullRequestToRef = newDto(BitbucketServerPullRequestRef.class);
-        pullRequestToRef.setId("refs/heads/" + pullRequest.getDestination().getBranch().getName());
-        BitbucketServerRepository toRepository = newDto(BitbucketServerRepository.class);
-        toRepository.setSlug(destination[1]);
 
-        BitbucketServerProject projectTo = newDto(BitbucketServerProject.class);
-        projectTo.setKey("~" + destination[0]);
-        toRepository.setProject(projectTo);
-        pullRequestToRef.setRepository(toRepository);
-        bitbucketServerPullRequest.setToRef(pullRequestToRef);
+        BitbucketServerRepository fromRepository =
+                newDto(BitbucketServerRepository.class).withSlug(source[1])
+                                                       .withProject(newDto(BitbucketServerProject.class).withKey("~" + source[0]));
+        BitbucketServerRepository toRepository =
+                newDto(BitbucketServerRepository.class).withSlug(destination[1])
+                                                       .withProject(newDto(BitbucketServerProject.class).withKey("~" + destination[0]));
 
-        return bitbucketServerPullRequest;
+        BitbucketServerPullRequestRef pullRequestFromRef =
+                newDto(BitbucketServerPullRequestRef.class).withId("refs/heads/" + pullRequest.getSource().getBranch().getName())
+                                                           .withRepository(fromRepository);
+
+        BitbucketServerPullRequestRef pullRequestToRef =
+                newDto(BitbucketServerPullRequestRef.class).withId("refs/heads/" + pullRequest.getDestination().getBranch().getName())
+                                                           .withRepository(toRepository);
+
+        return newDto(BitbucketServerPullRequest.class).withId(pullRequest.getId())
+                                                       .withTitle(pullRequest.getTitle())
+                                                       .withDescription(pullRequest.getDescription())
+                                                       .withFromRef(pullRequestFromRef)
+                                                       .withToRef(pullRequestToRef);
     }
 }

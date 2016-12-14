@@ -14,27 +14,39 @@
  */
 package org.eclipse.che.ide.ext.bitbucket.shared;
 
-import org.eclipse.che.dto.shared.DTO;
-
-import java.util.List;
-
 /**
- * Represents a pull requests page in the Bitbucket Server API.
+ * Base fields of the paged response in the Bitbucket Server rest API.
  *
  * @author Igor Vinokur
  */
-@DTO
-public interface BitbucketServerPullRequestsPage extends BitbucketServerPage{
+public interface BitbucketServerPage {
+    int getSize();
 
-    List<BitbucketServerPullRequest> getValues();
+    void setSize(int size);
 
-    void setValues(List<BitbucketServerPullRequest> values);
+    BitbucketServerPage withSize(int size);
 
-    BitbucketServerPullRequestsPage withValues(List<BitbucketServerPullRequest> values);
+    int getLimit();
+
+    void setLimit(int limit);
+
+    BitbucketServerPage withLimit(int limit);
+
+    boolean isIsLastPage();
+
+    void setIsLastPage(boolean isLastPage);
+
+    BitbucketServerPage withIsLastPage(boolean isLastPage);
+
+    int getStart();
+
+    void setStart(int start);
+
+    BitbucketServerPage withStart(int start);
 
     int getNextPageStart();
 
     void setNextPageStart(int nextPageStart);
 
-    BitbucketServerPullRequestsPage withNextPageStart(int nextPageStart);
+    BitbucketServerPage withNextPageStart(int nextPageStart);
 }

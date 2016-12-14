@@ -19,22 +19,22 @@ import org.eclipse.che.dto.shared.DTO;
 import java.util.List;
 
 /**
- * Represents a pull requests page in the Bitbucket Server API.
+ * Represents a repositories page in the Bitbucket API.
  *
  * @author Igor Vinokur
  */
 @DTO
-public interface BitbucketServerPullRequestsPage extends BitbucketServerPage{
+public interface BitbucketServerRepositoriesPage extends BitbucketServerPage {
 
-    List<BitbucketServerPullRequest> getValues();
+    List<BitbucketServerRepository> getValues();
 
-    void setValues(List<BitbucketServerPullRequest> values);
+    void setValues(List<BitbucketServerRepository> values);
 
-    BitbucketServerPullRequestsPage withValues(List<BitbucketServerPullRequest> values);
+    BitbucketServerRepositoriesPage withValues(List<BitbucketServerRepository> values);
 
     int getNextPageStart();
 
     void setNextPageStart(int nextPageStart);
 
-    BitbucketServerPullRequestsPage withNextPageStart(int nextPageStart);
+    BitbucketServerRepositoriesPage withNextPageStart(int nextPageStart);
 }

@@ -31,6 +31,8 @@ public interface BitbucketServerPullRequest {
 
     void setId(int id);
 
+    BitbucketServerPullRequest withId(int id);
+
     String getTitle();
 
     void setTitle(String title);
@@ -47,21 +49,31 @@ public interface BitbucketServerPullRequest {
 
     void setState(State state);
 
+    BitbucketServerPullRequest withState(State state);
+
     BitbucketServerPullRequestLinks getLinks();
 
     void setLinks(BitbucketServerPullRequestLinks links);
+
+    BitbucketServerPullRequest withLinks(BitbucketServerPullRequestLinks links);
 
     BitbucketServerAuthor getAuthor();
 
     void setAuthor(BitbucketServerAuthor author);
 
+    BitbucketServerPullRequest withAuthor(BitbucketServerAuthor author);
+
     BitbucketServerPullRequestRef getFromRef();
 
     void setFromRef(BitbucketServerPullRequestRef fromRef);
 
+    BitbucketServerPullRequest withFromRef(BitbucketServerPullRequestRef fromRef);
+
     BitbucketServerPullRequestRef getToRef();
 
-    void setToRef(BitbucketServerPullRequestRef fromRef);
+    void setToRef(BitbucketServerPullRequestRef toRef);
+
+    BitbucketServerPullRequest withToRef(BitbucketServerPullRequestRef toRef);
 
     enum State {
         OPEN,
@@ -74,6 +86,8 @@ public interface BitbucketServerPullRequest {
         List<BitbucketLink> getSelf();
 
         void setSelf(List<BitbucketLink> self);
+
+        BitbucketServerPullRequestLinks withSelf(List<BitbucketLink> self);
     }
 
     @DTO
@@ -81,6 +95,8 @@ public interface BitbucketServerPullRequest {
         BitbucketServerUser getUser();
 
         void setUser(BitbucketServerUser user);
+
+        BitbucketServerAuthor withUser(BitbucketServerUser user);
     }
 
     @DTO
@@ -89,17 +105,25 @@ public interface BitbucketServerPullRequest {
 
         void setId(String id);
 
+        BitbucketServerPullRequestRef withId(String id);
+
         String getDisplayId();
 
         void setDisplayId(String displayId);
+
+        BitbucketServerPullRequestRef withDisplayId(String displayId);
 
         String getLatestCommit();
 
         void setLatestCommit(String latestCommit);
 
+        BitbucketServerPullRequestRef withLatestCommit(String latestCommit);
+
         BitbucketServerRepository getRepository();
 
         void setRepository(BitbucketServerRepository repository);
+
+        BitbucketServerPullRequestRef withRepository(BitbucketServerRepository repository);
     }
 
 }

@@ -16,25 +16,34 @@ package org.eclipse.che.ide.ext.bitbucket.shared;
 
 import org.eclipse.che.dto.shared.DTO;
 
-import java.util.List;
-
 /**
- * Represents a pull requests page in the Bitbucket Server API.
+ * Represents a project in the Bitbucket Server API.
  *
  * @author Igor Vinokur
  */
 @DTO
-public interface BitbucketServerPullRequestsPage extends BitbucketServerPage{
+public interface BitbucketServerProject {
+    String getKey();
 
-    List<BitbucketServerPullRequest> getValues();
+    void setKey(String key);
 
-    void setValues(List<BitbucketServerPullRequest> values);
+    BitbucketServerProject withKey(String key);
 
-    BitbucketServerPullRequestsPage withValues(List<BitbucketServerPullRequest> values);
+    int getId();
 
-    int getNextPageStart();
+    void setId(int id);
 
-    void setNextPageStart(int nextPageStart);
+    BitbucketServerProject withId(int id);
 
-    BitbucketServerPullRequestsPage withNextPageStart(int nextPageStart);
+    String getName();
+
+    void setName(String name);
+
+    BitbucketServerProject withName(String name);
+
+    BitbucketServerUser getOwner();
+
+    void setOwner(BitbucketServerUser owner);
+
+    BitbucketServerProject withOwner(BitbucketServerUser owner);
 }
