@@ -27,16 +27,9 @@
     <name>Onpremises IDE :: Tomcat :: IDE :: All-in-One</name>
     <dependencies>
         <dependency>
-            <groupId>com.codenvy.lib</groupId>
-            <artifactId>codenvy-websocket-terminal</artifactId>
-            <type>tar.gz</type>
-            <classifier>linux_amd64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.codenvy.lib</groupId>
-            <artifactId>codenvy-websocket-terminal</artifactId>
-            <type>tar.gz</type>
-            <classifier>linux_arm7</classifier>
+            <groupId>com.codenvy</groupId>
+            <artifactId>docs</artifactId>
+            <type>war</type>
         </dependency>
         <dependency>
             <groupId>com.codenvy.onpremises</groupId>
@@ -62,6 +55,20 @@
             <groupId>com.codenvy.onpremises.wsmaster</groupId>
             <artifactId>codenvy-hosted-mail-server</artifactId>
             <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che</groupId>
+            <artifactId>exec-agent</artifactId>
+            <version>${project.version}</version>
+            <type>tar.gz</type>
+            <classifier>linux_amd64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che</groupId>
+            <artifactId>exec-agent</artifactId>
+            <version>${project.version}</version>
+            <type>tar.gz</type>
+            <classifier>linux_arm7</classifier>
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>

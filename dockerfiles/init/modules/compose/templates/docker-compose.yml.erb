@@ -138,7 +138,7 @@ services:
     image: <%= ENV["IMAGE_POSTGRES"] %>
     env_file:
 <% if @compose_file_for_containers == true -%>
-      - '/codenvy/instance/config/postgres/postgres.env'
+      - '<%= ENV["CHE_CONTAINER_ROOT"] %>/instance/config/postgres/postgres.env'
 <% else -%>
       - '<%= ENV["POSTGRES_ENV_FILE"] %>'
 <% end -%>
@@ -167,7 +167,7 @@ services:
       - postgres
     env_file:
 <% if @compose_file_for_containers == true -%>
-      - '/codenvy/instance/config/codenvy/codenvy.env'
+      - '<%= ENV["CHE_CONTAINER_ROOT"] %>/instance/config/codenvy/codenvy.env'
 <% else -%>
       - '<%= ENV["CODENVY_ENV_FILE"] %>'
 <% end -%>
