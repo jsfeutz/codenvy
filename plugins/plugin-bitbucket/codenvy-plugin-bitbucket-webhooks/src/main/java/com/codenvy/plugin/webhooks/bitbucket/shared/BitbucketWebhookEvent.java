@@ -17,27 +17,29 @@ package com.codenvy.plugin.webhooks.bitbucket.shared;
 import org.eclipse.che.dto.shared.DTO;
 
 @DTO
-public interface Pusher {
+public interface BitbucketWebhookEvent {
 
-    /**
-     * Get pusher's name.
-     *
-     * @return {@link String} name
-     */
-    String getName();
+    String getHttpUrl();
 
-    void setName(final String name);
+    void setHttpUrl(String httpUrl);
 
-    Pusher withName(final String name);
+    BitbucketWebhookEvent withHttpUrl(String httpUrl);
 
-    /**
-     * Get pusher's email.
-     *
-     * @return {@link String} email
-     */
-    String getEmail();
+    String getBranch();
 
-    void setEmail(final String email);
+    void setBranch(String branch);
 
-    Pusher withEmail(final String email);
+    BitbucketWebhookEvent withBranch(String branch);
+
+    String getCommitId();
+
+    void setCommitId(String commitId);
+
+    BitbucketWebhookEvent withCommitId(String commitId);
+
+    String getAction();
+
+    void setAction(String action);
+
+    BitbucketWebhookEvent withAction(String action);
 }
