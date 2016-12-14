@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.net.URLDecoder.decode;
+import static javax.ws.rs.core.HttpHeaders.ACCEPT;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED;
 import static org.eclipse.che.commons.json.JsonNameConventions.CAMEL_UNDERSCORE;
@@ -62,8 +63,9 @@ public abstract class BitbucketConnection {
 
     /** @see Bitbucket#getRepositoryPullRequests(String, String) */
     abstract List<BitbucketPullRequest> getRepositoryPullRequests(@NotNull final String owner,
-                                                                  @NotNull final String repositorySlug)
-            throws ServerException, IOException, BitbucketException;
+                                                                  @NotNull final String repositorySlug) throws ServerException,
+                                                                                                               IOException,
+                                                                                                               BitbucketException;
 
     /** @see Bitbucket#openPullRequest(String, String, BitbucketPullRequest) */
     abstract BitbucketPullRequest openPullRequest(@NotNull final String owner,
@@ -73,8 +75,11 @@ public abstract class BitbucketConnection {
                                                                                                           BitbucketException;
 
     /** @see Bitbucket#openPullRequest(String, String, BitbucketPullRequest) */
-    abstract public List<BitbucketRepository> getRepositoryForks(@NotNull final String owner, @NotNull final String repositorySlug)
-            throws IOException, BitbucketException, ServerException, IllegalArgumentException;
+    abstract public List<BitbucketRepository> getRepositoryForks(@NotNull final String owner,
+                                                                 @NotNull final String repositorySlug) throws IOException,
+                                                                                                              BitbucketException,
+                                                                                                              ServerException,
+                                                                                                              IllegalArgumentException;
 
     /** @see Bitbucket#forkRepository(String, String, String, boolean) */
     abstract public BitbucketRepositoryFork forkRepository(@NotNull final String owner,
@@ -128,6 +133,7 @@ public abstract class BitbucketConnection {
             http = (HttpURLConnection)new URL(requestUrl).openConnection();
             http.setInstanceFollowRedirects(false);
             http.setRequestMethod(requestMethod);
+            http.setRequestProperty(ACCEPT, APPLICATION_JSON);
 
             final Map<String, String> requestParameters = new HashMap<>();
             if (data != null && APPLICATION_FORM_URLENCODED.equals(contentType)) {

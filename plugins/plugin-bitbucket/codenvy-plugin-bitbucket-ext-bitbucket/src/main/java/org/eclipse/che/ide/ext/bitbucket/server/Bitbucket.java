@@ -25,6 +25,8 @@ import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketPullRequest;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepository;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketRepositoryFork;
 import org.eclipse.che.ide.ext.bitbucket.shared.BitbucketUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -42,6 +44,8 @@ import java.util.List;
 @Singleton
 public class Bitbucket {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Bitbucket.class);
+
     private String              bitbucketEndpoint;
     private BitbucketConnection bitbucketConnection;
 
@@ -57,7 +61,8 @@ public class Bitbucket {
                                      .useGetMethod()
                                      .request()
                                      .asString();
-        } catch (Exception ignored) {
+        } catch (Exception exception) {
+            LOG.error(exception.getMessage());
         }
         endpoint = endpoint != null && endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1)
                                                               : endpoint;

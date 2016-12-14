@@ -15,7 +15,7 @@
 package org.eclipse.che.ide.ext.bitbucket.shared;
 
 /**
- * Represents a page in the Bitbucket Server API.
+ * Base fields of the paged response in the Bitbucket Server rest API.
  *
  * @author Igor Vinokur
  */

@@ -31,12 +31,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.net.URLEncoder.encode;
-import static javax.ws.rs.core.HttpHeaders.ACCEPT;
 import static org.eclipse.che.commons.json.JsonHelper.toJson;
 import static org.eclipse.che.commons.json.JsonNameConventions.CAMEL_UNDERSCORE;
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
 import static org.eclipse.che.ide.MimeType.APPLICATION_FORM_URLENCODED;
-import static org.eclipse.che.ide.MimeType.APPLICATION_JSON;
 import static org.eclipse.che.ide.rest.HTTPHeader.AUTHORIZATION;
 import static org.eclipse.che.ide.rest.HTTPMethod.POST;
 import static org.eclipse.che.ide.rest.HTTPStatus.CREATED;
@@ -59,7 +57,7 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
 
     @Override
     public BitbucketUser getUser(String username) throws ServerException, IOException, BitbucketException {
-        final String response = getJson(urlTemplates.userUrl(null), OK);
+        final String response = getJson(urlTemplates.userUrl(username), OK);
         return parseJsonResponse(response, BitbucketUser.class);
     }
 
@@ -85,11 +83,9 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
 
             pullRequestsPage = getBitbucketPage(url, BitbucketPullRequestsPage.class);
             pullRequests.addAll(pullRequestsPage.getValues());
-
         } while (pullRequestsPage.getNext() != null);
 
         return pullRequests;
-
     }
 
     @Override
@@ -112,12 +108,11 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
         BitbucketRepositoriesPage repositoryPage = newDto(BitbucketRepositoriesPage.class);
 
         do {
-
             final String nextPageUrl = repositoryPage.getNext();
             final String url = nextPageUrl == null ? urlTemplates.forksUrl(owner, repositorySlug) : nextPageUrl;
+
             repositoryPage = getBitbucketPage(url, BitbucketRepositoriesPage.class);
             repositories.addAll(repositoryPage.getValues());
-
         } while (repositoryPage.getNext() != null);
 
         return repositories;
@@ -130,11 +125,9 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
                                                   boolean isForkPrivate) throws IOException,
                                                                                 BitbucketException,
                                                                                 ServerException {
-
         final String url = urlTemplates.forkRepositoryUrl(owner, repositorySlug);
         final String data = "name=" + encode(forkName, "UTF-8") + "&is_private=" + isForkPrivate;
         final String response = doRequest(POST, url, OK, APPLICATION_FORM_URLENCODED, data);
-
         return parseJsonResponse(response, BitbucketRepositoryFork.class);
     }
 
@@ -144,6 +137,5 @@ public class BitbucketConnectionImpl extends BitbucketConnection {
         if (token != null) {
             http.setRequestProperty(AUTHORIZATION, "Bearer " + token.getToken());
         }
-        http.setRequestProperty(ACCEPT, APPLICATION_JSON);
     }
 }
