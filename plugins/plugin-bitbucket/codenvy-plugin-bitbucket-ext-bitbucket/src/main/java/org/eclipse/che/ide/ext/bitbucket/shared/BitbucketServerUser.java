@@ -29,7 +29,6 @@ public interface BitbucketServerUser {
 
     void setName(String name);
 
-
     String getDisplayName();
 
     void setDisplayName(String displayName);

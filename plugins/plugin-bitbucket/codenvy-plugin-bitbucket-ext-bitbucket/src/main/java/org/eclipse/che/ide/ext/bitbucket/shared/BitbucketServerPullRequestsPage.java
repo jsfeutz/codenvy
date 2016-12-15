@@ -24,7 +24,7 @@ import java.util.List;
  * @author Igor Vinokur
  */
 @DTO
-public interface BitbucketServerPullRequestsPage extends BitbucketServerPage{
+public interface BitbucketServerPullRequestsPage extends BitbucketServerPage {
 
     List<BitbucketServerPullRequest> getValues();
 
