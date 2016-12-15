@@ -78,7 +78,7 @@ public class TestBitbucketWebhookService {
         when(mockFactoryConnection.updateFactory(gitHubfakeFactory)).thenReturn(gitHubfakeFactory);
 
         // Prepare BitbucketWebhookService
-        fakeBitbucketWebhookService = new BitbucketWebhookService(mockAuthConnection, mockFactoryConnection);
+        fakeBitbucketWebhookService = new BitbucketWebhookService(mockAuthConnection, mockFactoryConnection, "endpoint");
     }
 
     @Test
