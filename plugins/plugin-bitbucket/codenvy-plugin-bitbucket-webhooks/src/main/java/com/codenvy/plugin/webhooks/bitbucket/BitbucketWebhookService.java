@@ -139,15 +139,15 @@ public class BitbucketWebhookService extends BaseWebhookService {
             throw new ServerException("No factory found for repository " + htmlUrl + " and branch " + branch);
         }
 
-        for (FactoryDto f : factories) {
+        for (FactoryDto factory : factories) {
             // Get 'open factory' URL
-            final Link factoryLink = f.getLink(FACTORY_URL_REL);
+            final Link factoryLink = factory.getLink(FACTORY_URL_REL);
             if (factoryLink == null) {
-                throw new ServerException("Factory " + f.getId() + " do not contain mandatory \'" + FACTORY_URL_REL + "\' link");
+                throw new ServerException("Factory " + factory.getId() + " do not contain mandatory \'" + FACTORY_URL_REL + "\' link");
             }
 
             // Get connectors configured for the factory
-            final List<Connector> connectors = getConnectors(f.getId());
+            final List<Connector> connectors = getConnectors(factory.getId());
 
             // Add factory link within third-party services
             connectors.forEach(connector -> connector.addFactoryLink(factoryLink.getHref()));
