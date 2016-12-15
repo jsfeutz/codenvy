@@ -4,10 +4,10 @@ excerpt: "Welcome to Codenvy!"
 layout: docs
 permalink: /docs/introduction/
 ---
-Codenvy makes on-demand workspaces to give you a better agile experience. Codenvy SaaS is available for self-service at codenvy.com. You can also install Codenvy on your own infrastructure with Codenvy On-Prem.
+Codenvy makes Cloud workspaces for development teams featuring one-click Docker environments, team onboarding and a workspace platform for DevOps. Codenvy SaaS is available for self-service at codenvy.io. You can also install Codenvy on your own infrastructure with Codenvy On-Prem.
 
 # Codenvy and Eclipse Che  
-Codenvy is a commercial offering based on the [Eclipse Che](https://eclipse.org/che/) open source project, so Eclipse Che workspaces and plug-ins will work within Codenvy.
+Codenvy is a commercial offering powered by the [Eclipse Che](https://eclipse.org/che/) open source project, so Eclipse Che workspaces and plug-ins will work within Codenvy.
 
 Codenvy has added enterprise features to Eclipse Che including:
 * Workspace distribution across an elastic cluster with an embedded Docker Swarm
@@ -17,3 +17,7 @@ Codenvy has added enterprise features to Eclipse Che including:
 * Self-service user registration
 * Factories - which add actions and a simple URL execution option to the portable workspaces of Eclipse Che
 
+Get more information on:
+- [Codenvy](https://codenvy.com/)
+- [Eclipse Che(https://eclipse.org/che/)
+- [Differences between Codenvy and Eclipse Che](https://eclipse.org/che/extend/codenvy)
