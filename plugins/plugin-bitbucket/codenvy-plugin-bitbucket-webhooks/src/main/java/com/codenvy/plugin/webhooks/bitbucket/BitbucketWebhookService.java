@@ -117,16 +117,16 @@ public class BitbucketWebhookService extends BaseWebhookService {
         EnvironmentContext.getCurrent().setSubject(new TokenSubject());
 
         // Get event data
-        final String httpUrl = event.getHttpUrl();
+        final String cloneUrl = event.getHttpUrl();
         final String branch = event.getBranch();
 
         // Get factories id's that are configured in a webhook
-        final Set<String> factoriesIDs = getWebhookConfiguredFactoriesIDs(httpUrl);
+        final Set<String> factoriesIDs = getWebhookConfiguredFactoriesIDs(cloneUrl);
 
         // Get factories that contain a project for given repository and branch
-        final List<FactoryDto> factories = getFactoriesForRepositoryAndBranch(factoriesIDs, httpUrl, branch);
+        final List<FactoryDto> factories = getFactoriesForRepositoryAndBranch(factoriesIDs, cloneUrl, branch);
         if (factories.isEmpty()) {
-            throw new ServerException("No factory found for repository " + httpUrl + " and branch " + branch);
+            throw new ServerException("No factory found for repository " + cloneUrl + " and branch " + branch);
         }
 
         for (FactoryDto f : factories) {
@@ -147,25 +147,25 @@ public class BitbucketWebhookService extends BaseWebhookService {
     /**
      * Handle GitHub {@link BitbucketWebhookEvent}
      *
-     * @param prEvent
+     * @param event
      *         the pull request event to handle
      * @return HTTP 200 response if event was processed successfully
      * HTTP 202 response if event was processed partially
      * @throws ServerException
      */
-    private void handlePullRequestMergedEvent(BitbucketWebhookEvent prEvent) throws ServerException {
-        LOG.debug("{}", prEvent);
+    private void handlePullRequestMergedEvent(BitbucketWebhookEvent event) throws ServerException {
+        LOG.debug("{}", event);
 
         // Set current Codenvy user
         EnvironmentContext.getCurrent().setSubject(new TokenSubject());
 
         // Get head repository data
-        final String prHeadRepositoryHtmlUrl = prEvent.getHttpUrl();
-        final String prHeadBranch = prEvent.getBranch();
-        final String prHeadCommitId = prEvent.getCommitId();
+        final String prHeadRepositoryHtmlUrl = event.getHttpUrl();
+        final String prHeadBranch = event.getBranch();
+        final String prHeadCommitId = event.getCommitId();
 
         // Get base repository data
-        final String prBaseRepositoryHtmlUrl = prEvent.getHttpUrl();
+        final String prBaseRepositoryHtmlUrl = event.getHttpUrl();
 
         // Get factories id's that are configured in a webhook
         final Set<String> factoriesIDs = getWebhookConfiguredFactoriesIDs(prBaseRepositoryHtmlUrl);
@@ -184,6 +184,8 @@ public class BitbucketWebhookService extends BaseWebhookService {
             // Persist updated factory
             updateFactory(updatedfactory);
         }
+
+        handlePushEvent(event);
     }
 
     /**
