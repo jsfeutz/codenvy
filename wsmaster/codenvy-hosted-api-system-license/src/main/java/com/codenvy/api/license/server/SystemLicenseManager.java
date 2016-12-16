@@ -24,6 +24,7 @@ import com.codenvy.api.license.server.model.impl.SystemLicenseActionImpl;
 import com.codenvy.api.license.shared.dto.IssueDto;
 import com.codenvy.api.license.shared.model.FairSourceLicenseAcceptance;
 import com.codenvy.api.license.shared.model.Issue;
+import com.codenvy.api.permission.server.SystemDomain;
 import com.codenvy.swarm.client.SwarmDockerConnector;
 
 import org.eclipse.che.api.core.ApiException;
@@ -33,19 +34,25 @@ import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.commons.annotation.Nullable;
+import org.eclipse.che.commons.env.EnvironmentContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import static com.codenvy.api.license.shared.model.Constants.Action.ACCEPTED;
 import static com.codenvy.api.license.shared.model.Constants.License.FAIR_SOURCE_LICENSE;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
+import static com.codenvy.api.license.shared.model.Constants.Action.EXPIRED;
+import static com.codenvy.api.license.shared.model.Constants.License.FAIR_SOURCE_LICENSE;
+import static com.codenvy.api.license.shared.model.Constants.License.PRODUCT_LICENSE;
 
 /**
  * @author Anatoliy Bazko
@@ -63,9 +70,17 @@ public class SystemLicenseManager implements SystemLicenseManagerObservable {
     private final SystemLicenseActivator             systemLicenseActivator;
     private final List<SystemLicenseManagerObserver> observers;
 
-    public static final String UNABLE_TO_ADD_ACCOUNT_BECAUSE_OF_LICENSE   = "Unable to add your account. The Codenvy license has reached its user limit.";
-    public static final String LICENSE_HAS_REACHED_ITS_USER_LIMIT_MESSAGE = "Your user license has reached its limit. You cannot add more users.";
+    public static final String UNABLE_TO_ADD_ACCOUNT_BECAUSE_OF_LICENSE    = "Unable to add your account. The Codenvy license has reached its user limit.";
+    public static final String LICENSE_HAS_REACHED_ITS_USER_LIMIT_MESSAGE  = "Your user license has reached its limit. You cannot add more users.";
     public static final String FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED_MESSAGE = "Access cannot be granted until the Fair Source license agreement is accepted by an admin.";
+    public static final String LICENSE_EXPIRING_MESSAGE_TEMPLATE           = "License expired, please contact sales@codenvy.com to renew. "
+                                                                             + "System will revert to free, %s user maximum license in %s days";
+    public static final String LICENSE_EXPIRED_MESSAGE_FOR_ADMIN_TEMPLATE  = "There are currently %s users registered in Codenvy but your license only allows %s. "
+                                                                             + "Please remove %s users or contact sales@codenvy.com to purchase more seats. "
+                                                                             + "Users cannot use the IDE until this is corrected.";
+    public static final String LICENSE_EXPIRED_MESSAGE_FOR_NON_ADMIN       = "The Codenvy license is expired - you can access the user dashboard but not the IDE. "
+                                                                             + "Your admin can add a valid license to re-enable IDE access.";
+
 
     @Inject
     public SystemLicenseManager(SystemLicenseFactory licenseFactory,
@@ -212,7 +227,7 @@ public class SystemLicenseManager implements SystemLicenseManagerObservable {
     /**
      * Returns list of issues related to actual license.
      */
-    public List<IssueDto> getLicenseIssues() throws ServerException {
+    public List<IssueDto> getLicenseIssues() throws ServerException, ConflictException {
         List<IssueDto> issues = new ArrayList<>();
 
         if (!canUserBeAdded()) {
@@ -223,6 +238,14 @@ public class SystemLicenseManager implements SystemLicenseManagerObservable {
         if (!isFairSourceLicenseAccepted()) {
             issues.add(newDto(IssueDto.class).withStatus(Issue.Status.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED)
                                              .withMessage(FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED_MESSAGE));
+        }
+
+        if (isLicenseExpiring()) {
+            issues.add(newDto(IssueDto.class).withStatus(Issue.Status.LICENSE_EXPIRING)
+                                             .withMessage(getMessageForLicenseExpiring()));
+        } else if (isLicenseExpired()) {
+            issues.add(newDto(IssueDto.class).withStatus(Issue.Status.LICENSE_EXPIRED)
+                                             .withMessage(getMessageForLicenseExpired()));
         }
 
         return issues;
@@ -251,7 +274,7 @@ public class SystemLicenseManager implements SystemLicenseManagerObservable {
      */
     public boolean isFairSourceLicenseAccepted() throws ServerException {
         try {
-            systemLicenseActionDao.getByLicenseAndAction(FAIR_SOURCE_LICENSE, ACCEPTED);
+            systemLicenseActionDao.getByLicenseTypeAndAction(FAIR_SOURCE_LICENSE, ACCEPTED);
         } catch (NotFoundException e) {
             return false;
         }
@@ -267,5 +290,62 @@ public class SystemLicenseManager implements SystemLicenseManagerObservable {
     @Override
     public void removeObserver(SystemLicenseManagerObserver observer) {
         observers.remove(observer);
+    }
+
+    public String getMessageForLicenseExpiring() {
+        return format(LICENSE_EXPIRING_MESSAGE_TEMPLATE,
+                      SystemLicense.MAX_NUMBER_OF_FREE_USERS,
+                      load().daysBeforeExpiration());
+    }
+
+    public String getMessageForLicenseExpired() throws ServerException {
+        if (isAdmin()) {
+            SystemLicense license = load();
+            return format(LICENSE_EXPIRED_MESSAGE_FOR_ADMIN_TEMPLATE,
+                          userManager.getTotalCount(),
+                          license.getNumberOfUsers(),
+                          userManager.getTotalCount() - license.getNumberOfUsers());
+        } else {
+            return LICENSE_EXPIRED_MESSAGE_FOR_NON_ADMIN;
+        }
+    }
+
+    private boolean isLicenseExpiring() {
+        return load().isExpiring();
+    }
+
+    private boolean isLicenseExpired() throws ServerException, ConflictException {
+        SystemLicense license = load();
+        if (license.isExpired()) {
+            revertToFairSourceLicense(license);
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
+    private void revertToFairSourceLicense(SystemLicense license) throws ServerException, ConflictException {
+        try {
+            systemLicenseActionDao.getByLicenseIdAndAction(license.getLicenseId(), EXPIRED);
+        } catch (NotFoundException e) {
+            SystemLicenseActionImpl codenvyLicenseAction
+                = new SystemLicenseActionImpl(PRODUCT_LICENSE,
+                                              EXPIRED,
+                                              System.currentTimeMillis(),
+                                              license.getLicenseId(),
+                                              Collections.emptyMap());
+
+            systemLicenseActionDao.upsert(codenvyLicenseAction);
+        }
+    }
+
+
+    private boolean isAdmin() {
+        return EnvironmentContext.getCurrent().getSubject().hasPermission(SystemDomain.DOMAIN_ID, null, SystemDomain.MANAGE_SYSTEM_ACTION);
+    }
+
+    public boolean canStartWorkspace() throws ServerException {
+        return canUserBeAdded();
     }
 }

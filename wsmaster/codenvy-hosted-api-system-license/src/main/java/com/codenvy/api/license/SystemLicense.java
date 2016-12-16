@@ -16,6 +16,8 @@ package com.codenvy.api.license;
 
 import com.codenvy.api.license.exception.IllegalSystemLicenseFormatException;
 import com.license4j.License;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -32,10 +34,11 @@ import java.util.regex.Pattern;
  * @author Anatoliy Bazko
  */
 public class SystemLicense {
-    private static final Pattern    LICENSE_ID_PATTERN         = Pattern.compile(".*\\(id: ([0-9]+)\\)");
-    public static final  DateFormat EXPIRATION_DATE_FORMAT     = new SimpleDateFormat("yyyy/MM/dd");
-    public static final  long       MAX_NUMBER_OF_FREE_USERS   = 3;
-    public static final  int        MAX_NUMBER_OF_FREE_SERVERS = Integer.MAX_VALUE - 1;  // (-1) for testing propose only
+    private static final Pattern    LICENSE_ID_PATTERN                = Pattern.compile(".*\\(id: ([0-9]+)\\)");
+    public static final  DateFormat EXPIRATION_DATE_FORMAT            = new SimpleDateFormat("yyyy/MM/dd");
+    public static final  long       MAX_NUMBER_OF_FREE_USERS          = 3;
+    public static final  int        MAX_NUMBER_OF_FREE_SERVERS        = Integer.MAX_VALUE - 1;  // (-1) for testing propose only
+    public static final  int        ADDITIONAL_DAYS_FOR_LICENSE_FIXUP = 15;
 
     private final Map<SystemLicenseFeature, String> features;
     private final License                           license4j;
@@ -59,11 +62,34 @@ public class SystemLicense {
     }
 
     /**
-     * Indicates if license has been expired or hasn't.
+     * Indicates if license has been expired or hasn't, including additional days for license fix-up.
      */
     public boolean isExpired() {
         Date expirationDate = getExpirationDate();
-        return !expirationDate.after(Calendar.getInstance().getTime());
+        return expirationDate.before(DateTime.now().minusDays(ADDITIONAL_DAYS_FOR_LICENSE_FIXUP).toDate());
+    }
+
+    /**
+     * Indicates if license will expire in term of additional days for license fix-up, or less of then.
+     */
+    public boolean isExpiring() {
+        if (isExpired()) {
+            return false;
+        }
+
+        return daysBeforeExpiration() <= ADDITIONAL_DAYS_FOR_LICENSE_FIXUP;
+    }
+
+    /**
+     * Returns days between current date and expiration date, or 0 if license has already expired.
+     */
+    public int daysBeforeExpiration() {
+        if (isExpired()) {
+            return 0;
+        }
+
+        return Days.daysBetween(new DateTime(getExpirationDate()),
+                                new DateTime(System.currentTimeMillis())).getDays();
     }
 
     /**

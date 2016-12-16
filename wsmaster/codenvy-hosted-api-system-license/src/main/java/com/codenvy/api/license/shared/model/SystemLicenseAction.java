@@ -40,7 +40,7 @@ public interface SystemLicenseAction {
     /**
      * License qualifier.
      */
-    String getLicenseQualifier();
+    String getLicenseId();
 
     /**
      * Returns any action attributes.

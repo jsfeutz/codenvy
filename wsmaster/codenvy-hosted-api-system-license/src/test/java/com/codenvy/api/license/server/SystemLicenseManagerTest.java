@@ -25,6 +25,7 @@ import com.codenvy.swarm.client.SwarmDockerConnector;
 import com.codenvy.swarm.client.model.DockerNode;
 import com.google.common.collect.ImmutableList;
 
+import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.user.server.UserManager;
@@ -106,7 +107,7 @@ public class SystemLicenseManagerTest {
         when(newSystemLicense.getLicenseId()).thenReturn("2");
         when(newSystemLicense.getLicenseText()).thenReturn(NEW_LICENSE_TEXT);
         when(userManager.getTotalCount()).thenReturn(USER_NUMBER);
-        when(codenvyLicenseAction.getLicenseQualifier()).thenReturn(LICENSE_ID);
+        when(codenvyLicenseAction.getLicenseId()).thenReturn(LICENSE_ID);
 
         setSizeOfAdditionalNodes(NODES_NUMBER);
 
@@ -140,7 +141,7 @@ public class SystemLicenseManagerTest {
 
     @Test
     public void testIfFairSourceLicenseIsNotAccepted() throws Exception {
-        when(systemLicenseActionDao.getByLicenseAndAction(eq(FAIR_SOURCE_LICENSE), eq(ACCEPTED)))
+        when(systemLicenseActionDao.getByLicenseTypeAndAction(eq(FAIR_SOURCE_LICENSE), eq(ACCEPTED)))
             .thenThrow(new NotFoundException("System license not found"));
 
         assertFalse(systemLicenseManager.isFairSourceLicenseAccepted());
@@ -148,7 +149,7 @@ public class SystemLicenseManagerTest {
 
     @Test
     public void testIfFairSourceLicenseIsAccepted() throws Exception {
-        when(systemLicenseActionDao.getByLicenseAndAction(eq(FAIR_SOURCE_LICENSE), eq(ACCEPTED)))
+        when(systemLicenseActionDao.getByLicenseTypeAndAction(eq(FAIR_SOURCE_LICENSE), eq(ACCEPTED)))
             .thenReturn(mock(SystemLicenseActionImpl.class));
 
         assertTrue(systemLicenseManager.isFairSourceLicenseAccepted());
@@ -304,7 +305,7 @@ public class SystemLicenseManagerTest {
     }
 
     @Test
-    public void shouldReturnListOfIssues() throws ServerException {
+    public void shouldReturnListOfIssues() throws ServerException, ConflictException {
         doReturn(false).when(systemLicenseManager).canUserBeAdded();
         doReturn(false).when(systemLicenseManager).isFairSourceLicenseAccepted();
         assertEquals(systemLicenseManager.getLicenseIssues(),
@@ -315,7 +316,7 @@ public class SystemLicenseManagerTest {
     }
 
     @Test
-    public void shouldReturnEmptyListOfIssues() throws ServerException {
+    public void shouldReturnEmptyListOfIssues() throws ServerException, ConflictException {
         doReturn(true).when(systemLicenseManager).canUserBeAdded();
         doReturn(true).when(systemLicenseManager).isFairSourceLicenseAccepted();
         assertEquals(systemLicenseManager.getLicenseIssues(), ImmutableList.of());

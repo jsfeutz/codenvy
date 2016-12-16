@@ -87,7 +87,7 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                                           @Named("che.workspace.auto_snapshot") boolean defaultAutoSnapshot,
                                           @Named("che.workspace.auto_restore") boolean defaultAutoRestore,
                                           EnvironmentRamCalculator environmentRamCalculator) {
-        super(workspaceDao, runtimes, eventService, accountManager, defaultAutoSnapshot, defaultAutoRestore, snapshotDao);
+        super(workspaceDao, runtimes, eventService, accountManager, defaultAutoSnapshot, defaultAutoRestore, snapshotDao, null);
         this.startedWorkspacesLimit = startedWorkspacesLimit;
         this.systemRamInfoProvider = systemRamInfoProvider;
         this.workspacesPerUser = workspacesPerUser;

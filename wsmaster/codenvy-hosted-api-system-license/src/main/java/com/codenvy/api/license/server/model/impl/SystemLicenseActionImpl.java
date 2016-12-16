@@ -41,10 +41,15 @@ import java.util.Objects;
 @Entity(name = "LicenseAction")
 @NamedQueries(
         {
-                @NamedQuery(name = "LicenseAction.getByLicenseAndAction",
+                @NamedQuery(name = "LicenseAction.getByLicenseTypeAndAction",
                             query = "SELECT l " +
                                     "FROM LicenseAction l " +
-                                    "WHERE :license_type = l.licenseType AND :action_type = l.actionType")
+                                    "WHERE :license_type = l.licenseType AND :action_type = l.actionType"),
+                @NamedQuery(name = "LicenseAction.getByLicenseIdAndAction",
+                    query = "SELECT l " +
+                            "FROM LicenseAction l " +
+                            "WHERE :license_id = l.licenseId AND :action_type = l.actionType")
+
         }
 )
 @Table(name = "license_action")
@@ -95,7 +100,7 @@ public class SystemLicenseActionImpl implements SystemLicenseAction {
     }
 
     @Override
-    public String getLicenseQualifier() {
+    public String getLicenseId() {
         return licenseQualifier;
     }
 

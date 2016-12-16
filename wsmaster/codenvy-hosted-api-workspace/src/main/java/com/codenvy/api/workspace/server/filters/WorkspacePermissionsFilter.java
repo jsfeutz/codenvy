@@ -14,6 +14,7 @@
  */
 package com.codenvy.api.workspace.server.filters;
 
+import com.codenvy.api.license.server.SystemLicenseManager;
 import com.codenvy.api.permission.server.SystemDomain;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.google.api.client.repackaged.com.google.common.annotations.VisibleForTesting;
@@ -60,11 +61,13 @@ import static com.codenvy.organization.spi.impl.OrganizationImpl.ORGANIZATIONAL_
 public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
     private final WorkspaceManager workspaceManager;
     private final AccountManager   accountManager;
+    private SystemLicenseManager licenseManager;
 
     @Inject
-    public WorkspacePermissionsFilter(WorkspaceManager workspaceManager, AccountManager accountManager) {
+    public WorkspacePermissionsFilter(WorkspaceManager workspaceManager, AccountManager accountManager, SystemLicenseManager licenseManager) {
         this.workspaceManager = workspaceManager;
         this.accountManager = accountManager;
+        this.licenseManager = licenseManager;
     }
 
     @Override
@@ -111,6 +114,14 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
                     return;
                 }
             case "startById":
+                if (!licenseManager.canStartWorkspace()) {
+                    throw new ForbiddenException(licenseManager.getMessageForLicenseExpired());
+                }
+
+                key = ((String)arguments[0]);
+                action = RUN;
+                break;
+
             case "createSnapshot":
                 key = ((String)arguments[0]);
                 action = RUN;

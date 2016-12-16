@@ -148,13 +148,13 @@ public class AuditManagerTest {
 
         SystemLicenseAction acceptProductLicenseAction = mock(SystemLicenseAction.class);
         when(acceptProductLicenseAction.getAttributes()).thenReturn(Collections.singletonMap("email", "admin@codenvy.com"));
-        when(acceptProductLicenseAction.getLicenseQualifier()).thenReturn("1234");
+        when(acceptProductLicenseAction.getLicenseId()).thenReturn("1234");
         when(acceptProductLicenseAction.getActionTimestamp())
                 .thenReturn(new GregorianCalendar(2016, MARCH, 4, 22, 15).getTimeInMillis());
         when(systemLicenseActionHandler.findAction(PRODUCT_LICENSE, ACCEPTED)).thenReturn(acceptProductLicenseAction);
 
         SystemLicenseAction expireProductLicenseAction = mock(SystemLicenseAction.class);
-        when(expireProductLicenseAction.getLicenseQualifier()).thenReturn("1234");
+        when(expireProductLicenseAction.getLicenseId()).thenReturn("1234");
         when(expireProductLicenseAction.getActionTimestamp())
                 .thenReturn(new GregorianCalendar(2016, MARCH, 5, 22, 15).getTimeInMillis());
         when(systemLicenseActionHandler.findAction(PRODUCT_LICENSE, EXPIRED)).thenReturn(expireProductLicenseAction);

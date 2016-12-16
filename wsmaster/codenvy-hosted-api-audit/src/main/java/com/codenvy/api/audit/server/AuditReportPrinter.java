@@ -182,7 +182,7 @@ class AuditReportPrinter {
         String acceptanceTime = timestampToString(systemLicenseAction);
 
         printRow(format("%s accepted Codenvy license agreement %s at %s",
-                        email, systemLicenseAction.getLicenseQualifier(), acceptanceTime), auditReport);
+                        email, systemLicenseAction.getLicenseId(), acceptanceTime), auditReport);
         printRow("\n", auditReport);
     }
 
@@ -194,7 +194,7 @@ class AuditReportPrinter {
         String acceptanceTime = timestampToString(systemLicenseAction);
 
         printRow(format("Paid license %s expired on %s. System returned to previously accepted Fair Source license.",
-                        systemLicenseAction.getLicenseQualifier(), acceptanceTime), auditReport);
+                        systemLicenseAction.getLicenseId(), acceptanceTime), auditReport);
         printRow("\n", auditReport);
     }
 

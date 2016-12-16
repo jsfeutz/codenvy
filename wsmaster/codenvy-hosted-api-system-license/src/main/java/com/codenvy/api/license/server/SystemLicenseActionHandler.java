@@ -96,10 +96,10 @@ public class SystemLicenseActionHandler implements SystemLicenseManagerObserver 
         User user = userManager.getById(userId);
 
         try {
-            SystemLicenseActionImpl prevCodenvyLicenseAction = systemLicenseActionDao.getByLicenseAndAction(PRODUCT_LICENSE, ACCEPTED);
+            SystemLicenseActionImpl prevCodenvyLicenseAction = systemLicenseActionDao.getByLicenseTypeAndAction(PRODUCT_LICENSE, ACCEPTED);
             systemLicenseActionDao.remove(PRODUCT_LICENSE, EXPIRED);
 
-            if (prevCodenvyLicenseAction.getLicenseQualifier().equalsIgnoreCase(systemLicense.getLicenseId())) {
+            if (prevCodenvyLicenseAction.getLicenseId().equalsIgnoreCase(systemLicense.getLicenseId())) {
                 return;
             }
         } catch (NotFoundException ignored) {
@@ -130,6 +130,6 @@ public class SystemLicenseActionHandler implements SystemLicenseManagerObserver 
      */
     public SystemLicenseAction findAction(Constants.License licenseType, Constants.Action actionType) throws ServerException,
                                                                                                              NotFoundException {
-        return systemLicenseActionDao.getByLicenseAndAction(licenseType, actionType);
+        return systemLicenseActionDao.getByLicenseTypeAndAction(licenseType, actionType);
     }
 }
