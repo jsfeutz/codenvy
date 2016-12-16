@@ -14,6 +14,8 @@
 # is strictly forbidden unless prior written permission is obtained
 # from Codenvy S.A..
 #
+# Contributors:
+#   Florent Benoit - Initial Implementation
 
 module Jekyll
 
@@ -47,4 +49,7 @@ module Jekyll
   end
 end
 
+print "\033[1;34m Loading Codenvy Product Plugin\033[0m...";
+STDOUT.flush
 Liquid::Template.register_tag('product', Jekyll::ProductTag)
+puts " \033[0;32m[OK]\033[0m";
