@@ -77,10 +77,8 @@ public class WorkspaceFsBackupScheduler {
 
     @ScheduleRate(initialDelay = 1, period = 1, unit = TimeUnit.MINUTES)
     public void scheduleBackup() {
-        for (Map.Entry<String, WorkspaceRuntimes.WorkspaceState> wsStateEntry :
-                workspaceRuntimes.getWorkspaces().entrySet()) {
+        for (String workspaceId : workspaceRuntimes.getWorkspaces().keySet()) {
 
-            String workspaceId = wsStateEntry.getKey();
             try {
                 // re-read workspace state to ensure that it's still active after processing of all previous workspaces
                 WorkspaceImpl workspace = workspaceManager.getWorkspace(workspaceId);

@@ -179,7 +179,7 @@ public class DockerEnvironmentBackupManager implements EnvironmentBackupManager 
                                        syncPort,
                                        srcUserName,
                                        destPath);
-        } catch (IOException | ServerException e) {
+        } catch (IOException e) {
             throw new ServerException(e.getLocalizedMessage(), e);
         }
     }
