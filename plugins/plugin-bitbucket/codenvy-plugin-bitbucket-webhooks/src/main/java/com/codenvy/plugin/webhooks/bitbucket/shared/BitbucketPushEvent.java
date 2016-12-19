@@ -37,6 +37,8 @@ public interface BitbucketPushEvent {
 
     void setChangesets(Changesets changesets);
 
+    BitbucketPushEvent withChangesets(Changesets changesets);
+
     @DTO
     interface BitbucketServerRepository {
         String getName();
@@ -88,9 +90,13 @@ public interface BitbucketPushEvent {
 
         void setToHash(String toHash);
 
+        RefChanges withToHash(String toHash);
+
         String getType();
 
         void setType(String type);
+
+        RefChanges withType(String type);
     }
 
     @DTO
@@ -98,6 +104,8 @@ public interface BitbucketPushEvent {
         List<Value> getValues();
 
         void setValues(List<Value> values);
+
+        Changesets withValues(List<Value> values);
     }
 
     @DTO
@@ -105,6 +113,8 @@ public interface BitbucketPushEvent {
         ToCommit getToCommit();
 
         void setToCommit(ToCommit toCommit);
+
+        Value withToCommit(ToCommit toCommit);
     }
 
     @DTO
@@ -113,9 +123,13 @@ public interface BitbucketPushEvent {
 
         void setId(String id);
 
+        ToCommit withId(String id);
+
         String getMessage();
 
         void setMessage(String message);
+
+        ToCommit withMessage(String message);
     }
 }
 

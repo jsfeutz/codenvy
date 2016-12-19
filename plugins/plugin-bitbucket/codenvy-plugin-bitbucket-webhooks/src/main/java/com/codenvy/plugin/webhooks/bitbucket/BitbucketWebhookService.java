@@ -20,8 +20,8 @@ import com.codenvy.plugin.webhooks.BaseWebhookService;
 import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketPushEvent;
 import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketPushEvent.RefChanges;
 import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketPushEvent.Value;
-import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketWebhookEvent;
 import com.codenvy.plugin.webhooks.connectors.Connector;
+import com.google.common.annotations.VisibleForTesting;
 
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.rest.shared.dto.Link;
@@ -110,7 +110,8 @@ public class BitbucketWebhookService extends BaseWebhookService {
      * HTTP 202 response if event was processed partially
      * @throws ServerException
      */
-    private void handlePushEvent(BitbucketPushEvent event) throws ServerException {
+    @VisibleForTesting
+    void handlePushEvent(BitbucketPushEvent event) throws ServerException {
         LOG.debug("{}", event);
 
         // Set current Codenvy user
