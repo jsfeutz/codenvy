@@ -109,6 +109,10 @@ public interface BitbucketPushEvent {
 
     @DTO
     interface ToCommit {
+        String getId();
+
+        void setId(String id);
+
         String getMessage();
 
         void setMessage(String message);

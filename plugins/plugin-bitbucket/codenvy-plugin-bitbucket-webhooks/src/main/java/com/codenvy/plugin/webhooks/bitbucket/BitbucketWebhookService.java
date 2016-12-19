@@ -14,16 +14,12 @@
  */
 package com.codenvy.plugin.webhooks.bitbucket;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-
 import com.codenvy.plugin.webhooks.AuthConnection;
 import com.codenvy.plugin.webhooks.FactoryConnection;
 import com.codenvy.plugin.webhooks.BaseWebhookService;
 import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketPushEvent;
+import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketPushEvent.RefChanges;
+import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketPushEvent.Value;
 import com.codenvy.plugin.webhooks.bitbucket.shared.BitbucketWebhookEvent;
 import com.codenvy.plugin.webhooks.connectors.Connector;
 
@@ -54,13 +50,12 @@ import java.util.Set;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Api(value = "/bitbucket-webhook", description = "Bitbucket webhooks handler")
-@Path("/bitbucket-webhook")
+@Path("/bitbucketserver-webhook")
 public class BitbucketWebhookService extends BaseWebhookService {
 
     private static final Logger LOG = LoggerFactory.getLogger(BitbucketWebhookService.class);
 
-    private static final String BITBUCKET_WEBHOOKS_PROPERTIES_FILENAME = "bitbucket-webhooks.properties";
+    private static final String BITBUCKET_WEBHOOKS_PROPERTIES_FILENAME = "bitbucket_server-webhooks.properties";
     private final String bitbucketEndpoint;
 
     @Inject
@@ -72,28 +67,30 @@ public class BitbucketWebhookService extends BaseWebhookService {
                                                                  : bitbucketEndpoint;
     }
 
-    @ApiOperation(value = "Handle GitHub webhook events", response = Response.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "OK"),
-                   @ApiResponse(code = 202, message = "The request has been accepted for processing, but the processing has not been completed."),
-                   @ApiResponse(code = 500, message = "Internal Server Error")})
     @POST
     @Consumes(APPLICATION_JSON)
-    public Response handleBitbucketWebhookEvent(@ApiParam(value = "New contribution", required = true)
-                                                @Context HttpServletRequest request) throws ServerException {
+    public Response handleBitbucketWebhookEvent(@Context HttpServletRequest request) throws ServerException {
         Response response = Response.ok().build();
         try (ServletInputStream inputStream = request.getInputStream()) {
             if (inputStream != null) {
                 final BitbucketPushEvent event = DtoFactory.getInstance().createDtoFromJson(inputStream, BitbucketPushEvent.class);
-                List<BitbucketPushEvent.Value> values = event.getChangesets().getValues();
-                String lastCommitMessage = values != null ? values.get(0).getToCommit().getMessage() : "";
-                if (lastCommitMessage.startsWith("Merge pull request")) {
-                    handleMergeEvent(event, lastCommitMessage);
-                } else if ("update".equals(event.getRefChanges().get(0).getType().toLowerCase())) {
-                    handlePushEvent(event);
-                } else {
-                    response = Response.accepted(
-                            new GenericEntity<>("Bitbucket message received. It isn't intended to be processed.", String.class))
-                                       .build();
+                List<RefChanges> refChanges = event.getRefChanges();
+                for (RefChanges refChange : refChanges) {
+                    Optional<Value> commit = event.getChangesets()
+                                                  .getValues()
+                                                  .stream()
+                                                  .filter(changeSet -> changeSet.getToCommit().getId().equals(refChange.getToHash()))
+                                                  .findAny();
+                    String eventType = refChange.getType().toLowerCase();
+                    if (commit.isPresent() && commit.get().getToCommit().getMessage().startsWith("Merge pull request #")) {
+                        handleMergeEvent(event, commit.get().getToCommit().getMessage());
+                    } else if ("update".equals(eventType) || "add".equals(eventType)) {
+                        handlePushEvent(event);
+                    } else {
+                        response = Response.accepted(new GenericEntity<>("Bitbucket-Server message \'" + eventType +
+                                                                         "\' received. It isn't intended to be processed.", String.class))
+                                           .build();
+                    }
                 }
             }
         } catch (IOException e) {
@@ -180,7 +177,7 @@ public class BitbucketWebhookService extends BaseWebhookService {
         // Set current Codenvy user
         EnvironmentContext.getCurrent().setSubject(new TokenSubject());
 
-        String source = lastCommitMessage.substring(lastCommitMessage.indexOf(" from ") + 6, lastCommitMessage.indexOf(" to ") + 4);
+        String source = lastCommitMessage.substring(lastCommitMessage.indexOf(" from ") + 6, lastCommitMessage.indexOf(" to "));
 
         // Get head repository data
         final String branch = source.contains(":") ? source.substring(source.indexOf(":") + 1) : source;
@@ -189,10 +186,10 @@ public class BitbucketWebhookService extends BaseWebhookService {
         // Get base repository data
         final String htmlUrl = computeHttpCloneUrl(source.contains(":") ? source.substring(1, source.indexOf("/")) :
                                                    event.getRepository().getProject().getOwner().getName(),
-                                               source.contains(":") ? source.substring(0, source.indexOf("/")) :
-                                               event.getRepository().getProject().getKey(),
-                                               source.contains(":") ? source.substring(source.indexOf("/") + 1) :
-                                               event.getRepository().getName());
+                                                   source.contains(":") ? source.substring(0, source.indexOf("/")) :
+                                                   event.getRepository().getProject().getKey(),
+                                                   source.contains(":") ? source.substring(source.indexOf("/") + 1) :
+                                                   event.getRepository().getName());
 
         // Get factories id's that are configured in a webhook
         final Set<String> factoriesIDs = getWebhookConfiguredFactoriesIDs(htmlUrl);
